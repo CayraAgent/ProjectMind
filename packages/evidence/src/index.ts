@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { XMLParser, XMLValidator } from "fast-xml-parser";
@@ -77,8 +77,11 @@ function run(root: string, item: VerificationCommand): Promise<{ exitCode: numbe
     let termination: EvidenceRecord["termination"];
     const kill = () => {
       try {
-        if (process.platform !== "win32" && child.pid) process.kill(-child.pid, "SIGKILL");
-        else child.kill("SIGKILL");
+        if (process.platform === "win32" && child.pid) {
+          spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+        } else if (child.pid) {
+          process.kill(-child.pid, "SIGKILL");
+        }
       } catch { /* Process already exited. */ }
     };
     const timer = setTimeout(() => { termination = "timeout"; kill(); }, item.timeoutMs ?? 60_000);
@@ -93,7 +96,7 @@ function run(root: string, item: VerificationCommand): Promise<{ exitCode: numbe
     child.on("error", (error) => { termination = "spawn-error"; stderr += error.message; });
     child.on("close", (code) => {
       clearTimeout(timer);
-      kill();
+      if (process.platform !== "win32") kill();
       resolve({ exitCode: termination ? 1 : code ?? 1, stdout, stderr, ...(termination ? { termination } : {}) });
     });
   });

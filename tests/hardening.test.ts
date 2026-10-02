@@ -168,14 +168,14 @@ test("scanner includes and exclusions apply; symlink sources are not followed", 
   const { root } = await fixture(t);
   await mkdir(join(root, "vendor"));
   await writeFile(join(root, "vendor/file.ts"), "export const outside = () => 1;");
-  await symlink(join(root, "vendor/file.ts"), join(root, "src/linked.ts"));
+  if (process.platform !== "win32") await symlink(join(root, "vendor/file.ts"), join(root, "src/linked.ts"));
   const parsed = await parseProject(root, [".ts"], [], ["src"]);
   assert.deepEqual(parsed.files.map((item) => item.path), ["src/auth.ts"]);
   assert.equal((await parseProject(root, [".ts"], ["src"], ["."])).files.length, 1);
   await assert.rejects(parseProject(root, [".ts"], [], ["../outside"]));
 });
 
-test("Git filename parsing handles newlines; generated ProofPacks do not pollute changes", async (t) => {
+test("Git filename parsing handles newlines; generated ProofPacks do not pollute changes", { skip: process.platform === "win32" ? "Windows filenames cannot contain newlines" : false }, async (t) => {
   const { root } = await fixture(t);
   await writeFile(join(root, "src/odd\nname.ts"), "export const n = 1;");
   await writeJson(join(root, ".projectmind/latest-proof.json"), { arbitrary: true });

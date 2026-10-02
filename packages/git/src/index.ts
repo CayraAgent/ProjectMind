@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash } from "node:crypto";
-import { lstat, readFile, readlink, readdir } from "node:fs/promises";
+import { lstat, readFile, readlink, readdir, realpath } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { ChangeSummary, MindGraph } from "../../core/src/index.ts";
 import { parseSourceContent } from "../../parser/src/index.ts";
@@ -28,7 +28,11 @@ export function isDerivedState(path: string): boolean {
 }
 
 export async function repositoryState(root: string): Promise<string> {
-  if (resolve((await git(root, ["rev-parse", "--show-toplevel"])).trim()) !== resolve(root)) {
+  const [gitRoot, requestedRoot] = await Promise.all([
+    realpath(resolve((await git(root, ["rev-parse", "--show-toplevel"])).trim())),
+    realpath(resolve(root)),
+  ]);
+  if (gitRoot !== requestedRoot) {
     throw new Error("Run ProjectMind from the Git repository root.");
   }
   const commit = await currentCommit(root);
