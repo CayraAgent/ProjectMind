@@ -10,6 +10,7 @@
     "build": "tsc -p tsconfig.build.json",
     "lint": "node --experimental-strip-types scripts/lint.ts",
     "validate": "npm run lint && npm run typecheck && npm run schema:check && npm test && npm run build",
+    "validate:windows": "npm run lint && npm run typecheck && npm run schema:check && node --experimental-strip-types --test tests/structured-evidence.test.ts tests/proofpack-schema.test.ts && node --experimental-strip-types --test --test-name-pattern=\"AST scanner|graph resolves|scanner includes|base-ref comparison|initialization builds|config can be loaded|verification refuses\" tests/hardening.test.ts tests/projectmind.test.ts && npm run build",
     "projectmind": "node --experimental-strip-types apps/cli/src/index.ts",
     "pack:check": "pnpm build && pnpm pack --out ../projectmind-preview.tgz",
     "pack:repro": "pnpm build && node -e \"require('node:fs').mkdirSync('artifacts',{recursive:true})\" && pnpm pack --out artifacts/projectmind-preview-a.tgz && pnpm pack --out artifacts/projectmind-preview-b.tgz && node scripts/compare-packages.mjs artifacts/projectmind-preview-a.tgz artifacts/projectmind-preview-b.tgz",
