@@ -17,6 +17,7 @@ Implemented:
 
 - project detection, idempotent initialization, validated JSON contracts
 - JS/TS functions, typed arrows, classes, methods, imports and reexports
+- TypeScript `paths`/`baseUrl`, NodeNext JS-to-TS and local workspace import resolution, with explicit unresolved-import diagnostics
 - conservative file-level change and reverse-import impact analysis
 - explicit requirement-to-command-and-test evidence bindings
 - fresh, single-run evidence tied to Git HEAD and repository content
