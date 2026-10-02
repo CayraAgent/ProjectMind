@@ -1,16 +1,16 @@
+import { builtinModules } from "node:module";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { dirname, extname, join, normalize, relative, resolve } from "node:path";
-import { nowIso, stableId, writeJson, type GraphEdge, type GraphNode, type MindGraph, type ProjectConfig } from "../../core/src/index.ts";
+import { readdir, readFile } from "node:fs/promises";
+import { dirname, extname, isAbsolute, join, normalize, relative, resolve } from "node:path";
+import ts from "typescript";
+import { nowIso, stableId, writeJson, type GraphEdge, type GraphNode, type MindGraph, type ProjectConfig, type UnresolvedImport } from "../../core/src/index.ts";
 import { parseProject } from "../../parser/src/index.ts";
 
 function normalizeRel(path: string): string {
   return normalize(path).replaceAll("\\", "/").replace(/^\.\//, "");
 }
 
-function resolveImport(sourcePath: string, specifier: string, files: Map<string, GraphNode>): string | undefined {
-  if (!specifier.startsWith(".")) return undefined;
-  const base = normalizeRel(join(dirname(sourcePath), specifier));
+function resolveCandidates(base: string, files: Map<string, GraphNode>): string | undefined {
   const candidates = [
     base,
     ...[".ts", ".tsx", ".mts", ".cts"].map((extension) => base.replace(/\.(?:js|jsx|mjs|cjs)$/, extension)),
@@ -20,20 +20,97 @@ function resolveImport(sourcePath: string, specifier: string, files: Map<string,
   return candidates.find((candidate) => files.has(candidate));
 }
 
-async function packageNodes(root: string): Promise<GraphNode[]> {
-  const packagePath = join(root, "package.json");
-  if (!existsSync(packagePath)) return [];
-  const pkg = JSON.parse(await readFile(packagePath, "utf8")) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
-  return [...new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})])]
-    .sort()
-    .map((name) => ({ id: stableId("pkg", name), type: "PACKAGE" as const, name }));
+interface PackageManifest {
+  dir: string;
+  name?: string;
+  dependencies: string[];
+  entry?: string;
+}
+
+const ignoredDirectories = new Set([".git", ".projectmind", "node_modules", "dist", "build", "coverage", ".next"]);
+
+async function findPackageManifests(root: string, dir = root): Promise<PackageManifest[]> {
+  const manifests: PackageManifest[] = [];
+  const packagePath = join(dir, "package.json");
+  if (existsSync(packagePath)) {
+    const pkg = JSON.parse(await readFile(packagePath, "utf8")) as {
+      name?: string;
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+      exports?: string | Record<string, unknown>;
+      types?: string;
+      module?: string;
+      main?: string;
+    };
+    const rootExport = typeof pkg.exports === "string" ? pkg.exports : pkg.exports?.["."];
+    const entry = typeof rootExport === "string" ? rootExport : pkg.types ?? pkg.module ?? pkg.main;
+    manifests.push({
+      dir,
+      ...(pkg.name ? { name: pkg.name } : {}),
+      dependencies: [...new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {})])],
+      ...(entry ? { entry } : {}),
+    });
+  }
+  for (const item of (await readdir(dir, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+    if (item.isDirectory() && !ignoredDirectories.has(item.name)) manifests.push(...await findPackageManifests(root, join(dir, item.name)));
+  }
+  return manifests;
+}
+
+function packageSpecifier(specifier: string): string {
+  return specifier.startsWith("@") ? specifier.split("/").slice(0, 2).join("/") : specifier.split("/")[0] ?? "";
+}
+
+function insideRoot(root: string, path: string): boolean {
+  const rel = relative(root, path);
+  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+}
+
+async function compilerOptions(root: string): Promise<ts.CompilerOptions> {
+  const configPath = ts.findConfigFile(root, ts.sys.fileExists);
+  if (!configPath) return { moduleResolution: ts.ModuleResolutionKind.NodeNext, module: ts.ModuleKind.NodeNext };
+  const loaded = ts.readConfigFile(configPath, ts.sys.readFile);
+  if (loaded.error) throw new Error(`Cannot read TypeScript config: ${ts.flattenDiagnosticMessageText(loaded.error.messageText, " ")}`);
+  const parsed = ts.parseJsonConfigFileContent(loaded.config, ts.sys, dirname(configPath));
+  const error = parsed.errors.find((item) => item.category === ts.DiagnosticCategory.Error);
+  if (error) throw new Error(`Cannot parse TypeScript config: ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
+  return parsed.options;
+}
+
+function resolveImport(root: string, sourcePath: string, specifier: string, files: Map<string, GraphNode>, options: ts.CompilerOptions, workspaces: Map<string, PackageManifest>): { path?: string; reason?: UnresolvedImport["reason"] } {
+  if (specifier.startsWith(".")) {
+    const direct = resolveCandidates(normalizeRel(join(dirname(sourcePath), specifier)), files);
+    if (direct) return { path: direct };
+  }
+  const result = ts.resolveModuleName(specifier, join(root, sourcePath), options, ts.sys).resolvedModule;
+  if (result && !result.isExternalLibraryImport) {
+    if (!insideRoot(root, result.resolvedFileName)) return { reason: "outside-scan" };
+    const rel = normalizeRel(relative(root, result.resolvedFileName));
+    const matched = resolveCandidates(rel, files);
+    return matched ? { path: matched } : { reason: "outside-scan" };
+  }
+  const packageName = packageSpecifier(specifier);
+  const workspace = workspaces.get(packageName);
+  if (workspace) {
+    const subpath = specifier.slice(packageName.length).replace(/^\//, "");
+    const base = subpath ? join(workspace.dir, subpath) : join(workspace.dir, workspace.entry ?? "src/index.ts");
+    const matched = resolveCandidates(normalizeRel(relative(root, base)), files);
+    return matched ? { path: matched } : { reason: "outside-scan" };
+  }
+  return { reason: "not-found" };
 }
 
 export async function buildMindGraph(root: string, config: ProjectConfig): Promise<MindGraph> {
   const parsed = await parseProject(root, config.scanner.extensions, config.scanner.exclude, config.scanner.include);
-  const packages = await packageNodes(root);
+  const manifests = await findPackageManifests(root);
+  const workspaceByName = new Map(manifests.filter((item): item is PackageManifest & { name: string } => Boolean(item.name)).map((item) => [item.name, item]));
+  const dependencyNames = [...new Set(manifests.flatMap((item) => item.dependencies))].filter((name) => !workspaceByName.has(name)).sort();
+  const packages = dependencyNames.map((name) => ({ id: stableId("pkg", name), type: "PACKAGE" as const, name }));
+  const options = await compilerOptions(root);
   const nodes = [...parsed.files, ...parsed.symbols, ...packages];
   const edges: GraphEdge[] = [];
+  const unresolvedImports: UnresolvedImport[] = [];
   const fileByPath = new Map(parsed.files.filter((node) => node.path).map((node) => [node.path as string, node]));
   const packageByName = new Map(packages.map((node) => [node.name, node]));
 
@@ -52,9 +129,9 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
   for (const item of parsed.imports) {
     const from = fileByPath.get(item.sourcePath);
     if (!from) continue;
-    const targetFile = resolveImport(item.sourcePath, item.specifier, fileByPath);
-    if (targetFile) {
-      const to = fileByPath.get(targetFile);
+    const target = resolveImport(resolve(root), item.sourcePath, item.specifier, fileByPath, options, workspaceByName);
+    if (target.path) {
+      const to = fileByPath.get(target.path);
       if (!to) continue;
       edges.push({
         id: stableId("edge", `IMPORTS:${from.id}:${to.id}`),
@@ -65,9 +142,7 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
       });
       continue;
     }
-    const packageName = item.specifier.startsWith("@")
-      ? item.specifier.split("/").slice(0, 2).join("/")
-      : item.specifier.split("/")[0];
+    const packageName = packageSpecifier(item.specifier);
     if (!packageName) continue;
     const pkg = packageByName.get(packageName);
     if (pkg) {
@@ -78,7 +153,9 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
         to: pkg.id,
         metadata: { specifier: item.specifier },
       });
+      continue;
     }
+    if (!item.specifier.startsWith("node:") && !builtinModules.includes(item.specifier)) unresolvedImports.push({ sourcePath: item.sourcePath, specifier: item.specifier, reason: target.reason ?? "not-found" });
   }
 
   const tests = parsed.files.filter((node) => node.type === "TEST" && node.path);
@@ -105,6 +182,8 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
     parser: "typescript-ast-5.9",
     nodes,
     edges: [...new Map(edges.map((edge) => [edge.id, edge])).values()],
+    unresolvedImports: [...new Map(unresolvedImports.map((item) => [`${item.sourcePath}\0${item.specifier}`, item])).values()]
+      .sort((a, b) => a.sourcePath.localeCompare(b.sourcePath) || a.specifier.localeCompare(b.specifier)),
   };
 }
 
@@ -114,6 +193,7 @@ export async function persistMindGraph(root: string, graph: MindGraph): Promise<
 
 export function graphStats(graph: MindGraph): Record<string, number> {
   const stats: Record<string, number> = { nodes: graph.nodes.length, edges: graph.edges.length };
+  stats.unresolvedImports = graph.unresolvedImports.length;
   for (const node of graph.nodes) stats[node.type.toLowerCase()] = (stats[node.type.toLowerCase()] ?? 0) + 1;
   return stats;
 }

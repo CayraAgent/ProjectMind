@@ -48,12 +48,19 @@ export interface GraphEdge {
   metadata?: Record<string, unknown>;
 }
 
+export interface UnresolvedImport {
+  sourcePath: string;
+  specifier: string;
+  reason: "not-found" | "outside-scan";
+}
+
 export interface MindGraph {
   version: 1;
   generatedAt: string;
   parser: string;
   nodes: GraphNode[];
   edges: GraphEdge[];
+  unresolvedImports: UnresolvedImport[];
 }
 
 export interface Requirement {

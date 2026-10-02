@@ -17,7 +17,7 @@ Before `v0.1.0` can be released:
 
 - [x] structured Node test results: distinguish zero tests/skips from relevant executed cases
 - [x] reviewed ProofPack schema and compatibility fixture
-- [ ] TS config aliases/workspace resolution with unresolved-import reporting
+- [x] TS config aliases/workspace resolution with unresolved-import reporting
 - [ ] deleted-symbol/base-ref comparison fixtures
 - [ ] reproducible CI-published package and full consumer/action validation
 - [ ] cross-platform runner decision; tested OS support documented
