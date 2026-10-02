@@ -85,6 +85,23 @@ export const evidenceRecordSchema = z.object({
   testSummary: testSummarySchema.optional(),
   evidenceError: nonempty.optional(),
 }).strict();
+export const claimRecordSchema = z.object({
+  version: z.literal(1).default(1),
+  id: z.string().regex(/^claim_[a-f0-9]{24}$/),
+  text: nonempty.max(10_000),
+  createdAt: z.string().datetime(),
+  status: z.literal("UNPROVEN"),
+  evidenceIds: z.array(z.string().regex(/^ev_[a-f0-9]{24}$/)).default([]),
+  intentId: intentIdSchema.optional(),
+  requirementId: z.string().regex(/^REQ-\d+$/).optional(),
+}).strict().superRefine((claim, context) => {
+  if (claim.requirementId && !claim.intentId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "A requirement claim binding also requires an intent id" });
+  }
+  if (new Set(claim.evidenceIds).size !== claim.evidenceIds.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Duplicate claim evidence ids" });
+  }
+});
 const requirementVerificationSchema = z.object({
   requirementId: z.string().regex(/^REQ-\d+$/),
   status: z.enum(["VERIFIED", "UNVERIFIED", "FAILED"]),

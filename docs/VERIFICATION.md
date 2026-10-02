@@ -41,6 +41,8 @@ The Node provider parses JUnit XML, rejects zero-test and all-skipped runs, and 
 
 Stored ProofPacks are historical artifacts. The CLI does not accept them as current execution evidence. The MCP evidence reader does not refresh a saved verdict.
 
+Claims remain `UNPROVEN` data and are never verification inputs. `claim report` classifies only explicit links as `DECLARED_ONLY`, `EVIDENCE_LINKED`, or `VERIFIED_REQUIREMENT_LINKED`. The strongest level means that every referenced evidence record is passing and belongs to the named verified requirement in the latest historical ProofPack; it does not establish that the free-form claim text is true and never updates a verdict.
+
 ## Trust boundary
 
 An agent cannot directly set a verdict through MCP. Removing a `mark_verified` tool alone does not make the system tamper-proof. Anyone with write access to tests/config/source or the artifact directory can weaken checks or forge unsigned JSON. A separately trusted CI runner and reviewed checks provide operational separation; signed provenance is out of scope until a later roadmap.

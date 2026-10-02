@@ -241,7 +241,7 @@ test("real MCP client negotiates stdio, validates inputs, and cannot execute by 
   t.after(() => client.close());
   await client.connect(transport);
   const { tools } = await client.listTools();
-  assert.equal(tools.length, 8);
+  assert.equal(tools.length, 9);
   assert.ok(!tools.some((item) => /mark.*verif/.test(item.name)));
   const context = await client.callTool({ name: "projectmind_get_project_context", arguments: {} });
   assert.equal(context.isError, undefined);
@@ -251,6 +251,8 @@ test("real MCP client negotiates stdio, validates inputs, and cannot execute by 
   assert.equal(invalid.isError, true);
   const claimed = await client.callTool({ name: "projectmind_record_claim", arguments: { text: "Everything passed" } });
   assert.match(JSON.stringify(claimed.content), /UNPROVEN/);
+  const claimReport = await client.callTool({ name: "projectmind_get_claim_report", arguments: {} });
+  assert.match(JSON.stringify(claimReport.content), /DECLARED_ONLY/);
 });
 
 test("base-ref comparison includes committed changes and rejects option-shaped refs", async (t) => {
