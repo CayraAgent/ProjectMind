@@ -73,7 +73,7 @@ The MCP server exposes `projectmind_request_verification`, never a status-settin
 
 Local first · Model agnostic · Deterministic core · AI optional · Evidence > claims · No self-verification API · Git native · Open formats · Extensible · Secure by default
 
-See [architecture](docs/ARCHITECTURE.md), [roadmap](ROADMAP.md), [contributing](CONTRIBUTING.md), and [security policy](SECURITY.md).
+See [architecture](docs/ARCHITECTURE.md), [platform support](docs/PLATFORMS.md), [roadmap](ROADMAP.md), [contributing](CONTRIBUTING.md), and [security policy](SECURITY.md).
 
 ## ProofPack format
 
