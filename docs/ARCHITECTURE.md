@@ -15,7 +15,8 @@ The deterministic core is model-independent. No LLM decides a verdict.
 | `mcp` | Official SDK stdio transport, validated tool arguments, operator-controlled execution |
 | `report` / CLI | Human-readable output and exit codes |
 | `memory` | Basic local decision/constraint/incident records; not evidence |
-| `policy` / `sdk` | Bootstrap placeholders; not enforcement or a stable plugin API |
+| `policy` | Deterministic Project Constitution checks for forbidden dependency directions and sensitive-path evidence |
+| `sdk` | Bootstrap placeholder; not a stable plugin API |
 
 The directory structure separates responsibilities; this preview builds one distributable from a root manifest. Individual directories are not separately published packages. The pnpm workspace includes the runnable example. Do not add Turbo solely to orchestrate one distributable.
 
