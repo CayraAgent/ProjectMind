@@ -38,7 +38,7 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm pack:repro
       - run: node scripts/package-smoke.mjs artifacts/projectmind-preview-a.tgz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: projectmind-package-${{ github.sha }}
           path: artifacts/projectmind-preview-a.tgz
@@ -60,7 +60,7 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Verify ProjectMind with ProjectMind
         run: pnpm projectmind verify
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: projectmind-self-proof-${{ github.sha }}
           path: .projectmind/latest-proof.json
