@@ -48,7 +48,10 @@ export function parseSourceContent(path: string, rel: string, source: string): P
   const symbols: GraphNode[] = [];
   const imports: ParsedImport[] = [];
   const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
-  const diagnostics = ts.transpileModule(source, { fileName: path, reportDiagnostics: true, compilerOptions: { target: ts.ScriptTarget.ESNext, jsx: ts.JsxEmit.Preserve } }).diagnostics ?? [];
+  // Declaration files intentionally produce no JavaScript. Asking transpileModule
+  // to emit them throws "Debug Failure. Output generation failed" in TypeScript.
+  const declarationFile = /\.d\.(?:ts|mts|cts)$/.test(path);
+  const diagnostics = declarationFile ? [] : ts.transpileModule(source, { fileName: path, reportDiagnostics: true, compilerOptions: { target: ts.ScriptTarget.ESNext, jsx: ts.JsxEmit.Preserve } }).diagnostics ?? [];
   const error = diagnostics.find((item) => item.category === ts.DiagnosticCategory.Error);
   if (error) throw new Error(`Cannot parse ${rel}: ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
   const addSymbol = (node: ts.Node, name: string, type: "FUNCTION" | "CLASS") => {
