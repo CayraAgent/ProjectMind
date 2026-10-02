@@ -1,0 +1,475 @@
+{
+  "$id": "https://github.com/CayraAgent/ProjectMind/blob/main/schemas/proofpack-v1.schema.json",
+  "$ref": "#/definitions/ProjectMindProofPackV1",
+  "definitions": {
+    "ProjectMindProofPackV1": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "projectMindVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "const": "declared-command-checks"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^proof_[a-f0-9]{24}$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "project": {
+          "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40,64}$"
+        },
+        "intent": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "number",
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^PM-\\d{4,}$"
+            },
+            "title": {
+              "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "requirements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^REQ-\\d+$"
+                  },
+                  "statement": {
+                    "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                  },
+                  "critical": {
+                    "type": "boolean"
+                  },
+                  "evidenceKinds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "test",
+                        "build",
+                        "typecheck",
+                        "lint",
+                        "static",
+                        "runtime",
+                        "command"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "evidenceCommands": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                    }
+                  },
+                  "evidenceTests": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "statement",
+                  "critical",
+                  "evidenceKinds"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
+            },
+            "preserve": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+              }
+            },
+            "outOfScope": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+              }
+            }
+          },
+          "required": [
+            "version",
+            "id",
+            "title",
+            "createdAt",
+            "requirements",
+            "preserve",
+            "outOfScope"
+          ],
+          "additionalProperties": false
+        },
+        "change": {
+          "type": "object",
+          "properties": {
+            "commit": {
+              "$ref": "#/definitions/ProjectMindProofPackV1/properties/commit"
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "changedSymbols": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                  },
+                  "name": {
+                    "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "FILE",
+                      "MODULE",
+                      "FUNCTION",
+                      "CLASS",
+                      "TEST",
+                      "PACKAGE"
+                    ]
+                  },
+                  "path": {
+                    "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "affectedFiles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "files",
+            "changedSymbols",
+            "affectedFiles"
+          ],
+          "additionalProperties": false
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "number",
+                "const": 1
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^ev_[a-f0-9]{24}$"
+              },
+              "kind": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/intent/properties/requirements/items/properties/evidenceKinds/items"
+              },
+              "command": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+              },
+              "startedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "finishedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "durationMs": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "exitCode": {
+                "type": "integer"
+              },
+              "stdout": {
+                "type": "string"
+              },
+              "stderr": {
+                "type": "string"
+              },
+              "commit": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/commit"
+              },
+              "runId": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+              },
+              "repositoryState": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "repositoryStateAfter": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/evidence/items/properties/repositoryState"
+              },
+              "termination": {
+                "type": "string",
+                "enum": [
+                  "timeout",
+                  "output-limit",
+                  "spawn-error"
+                ]
+              },
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "generic-command",
+                  "node-test-junit"
+                ]
+              },
+              "testSummary": {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "node-test-junit"
+                  },
+                  "discovered": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "passed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "failed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "skipped": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "cases": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^test_[a-f0-9]{24}$"
+                        },
+                        "name": {
+                          "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                        },
+                        "classname": {
+                          "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                        },
+                        "file": {
+                          "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "passed",
+                            "failed",
+                            "skipped"
+                          ]
+                        },
+                        "durationMs": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "provider",
+                  "discovered",
+                  "passed",
+                  "failed",
+                  "skipped",
+                  "cases"
+                ],
+                "additionalProperties": false
+              },
+              "evidenceError": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+              }
+            },
+            "required": [
+              "version",
+              "id",
+              "kind",
+              "startedAt",
+              "finishedAt",
+              "durationMs",
+              "exitCode",
+              "stdout",
+              "stderr"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "verification": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "number",
+              "const": 1
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "VERIFIED",
+                "PARTIALLY_VERIFIED",
+                "NOT_VERIFIED",
+                "BLOCKED"
+              ]
+            },
+            "intentId": {
+              "$ref": "#/definitions/ProjectMindProofPackV1/properties/intent/properties/id"
+            },
+            "generatedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "requiredCommandResults": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "$ref": "#/definitions/ProjectMindProofPackV1/properties/intent/properties/requirements/items/properties/evidenceKinds/items"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PASS",
+                      "FAIL",
+                      "MISSING"
+                    ]
+                  },
+                  "evidenceId": {
+                    "type": "string",
+                    "pattern": "^ev_[a-f0-9]{24}$"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "requirements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "requirementId": {
+                    "type": "string",
+                    "pattern": "^REQ-\\d+$"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "VERIFIED",
+                      "UNVERIFIED",
+                      "FAILED"
+                    ]
+                  },
+                  "evidenceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^ev_[a-f0-9]{24}$"
+                    }
+                  },
+                  "reason": {
+                    "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+                  }
+                },
+                "required": [
+                  "requirementId",
+                  "status",
+                  "evidenceIds"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProjectMindProofPackV1/properties/projectMindVersion"
+              }
+            },
+            "repositoryState": {
+              "$ref": "#/definitions/ProjectMindProofPackV1/properties/evidence/items/properties/repositoryState"
+            }
+          },
+          "required": [
+            "version",
+            "status",
+            "intentId",
+            "generatedAt",
+            "requiredCommandResults",
+            "requirements",
+            "reasons"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "projectMindVersion",
+        "scope",
+        "id",
+        "createdAt",
+        "project",
+        "intent",
+        "change",
+        "evidence",
+        "verification"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

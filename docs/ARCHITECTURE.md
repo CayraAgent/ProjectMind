@@ -11,7 +11,7 @@ The deterministic core is model-independent. No LLM decides a verdict.
 | `intent` | Requirement declarations and explicit command bindings |
 | `evidence` | Fresh command execution, bounded output, timeouts, one run id, Node JUnit parsing |
 | `verifier` | Pure declared-check verdict; orchestration rescans and rejects repository drift |
-| `proofpack` | JSON artifacts with intent, changes, evidence, scope and verdict |
+| `proofpack` | Runtime-validated JSON artifacts with intent, changes, evidence, scope and verdict |
 | `mcp` | Official SDK stdio transport, validated tool arguments, operator-controlled execution |
 | `report` / CLI | Human-readable output and exit codes |
 | `memory` | Basic local decision/constraint/incident records; not evidence |
@@ -34,4 +34,4 @@ The fingerprint includes HEAD, Git-tracked and nonignored untracked file bytes/m
 
 ## Incremental interfaces
 
-Public contracts currently have version 1 and are development-preview formats. An interface change must carry a compatibility note and tests before a stable release. The SDK/provider placeholders do not constitute a compatibility commitment yet.
+Public contracts currently have version 1 and are development-preview formats. ProofPack v1 has a generated public JSON Schema and a checked-in compatibility fixture. An interface change must carry a compatibility note and tests before a stable release. The SDK/provider placeholders do not constitute a compatibility commitment yet.

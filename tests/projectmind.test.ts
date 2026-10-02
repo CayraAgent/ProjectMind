@@ -87,11 +87,11 @@ test("change summary and ProofPack preserve intent/change/evidence lineage", asy
   const bound = await loadIntent(root);
   const freshEvidence = await collectVerificationEvidence(root, config);
   const verification = verifyIntent(config, bound, freshEvidence, await repositoryState(root));
-  const proof = await createProofPack(root, config.project.name, intent, change, evidence, verification);
+  const proof = await createProofPack(root, config.project.name, bound, change, freshEvidence, verification);
 
   assert.ok(change.files.includes("src/auth.ts"));
   assert.ok(change.changedSymbols.some((symbol) => symbol.name === "login"));
-  assert.equal(proof.intent.id, intent.id);
+  assert.equal(proof.intent.id, bound.id);
   assert.equal(proof.verification.status, "VERIFIED");
 
   const persisted = JSON.parse(await readFile(join(root, ".projectmind", "latest-proof.json"), "utf8")) as { id: string };
