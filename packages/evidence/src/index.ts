@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { XMLParser, XMLValidator } from "fast-xml-parser";
@@ -78,7 +78,7 @@ function run(root: string, item: VerificationCommand): Promise<{ exitCode: numbe
     const kill = () => {
       try {
         if (process.platform === "win32" && child.pid) {
-          spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+          spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
         } else if (child.pid) {
           process.kill(-child.pid, "SIGKILL");
         }
