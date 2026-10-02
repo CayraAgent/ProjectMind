@@ -10,6 +10,13 @@ try {
   execFileSync('npm', ['install', '--omit=dev', '--ignore-scripts', '--no-package-lock', '--no-audit', '--no-fund'], { cwd: pkgRoot, stdio: 'inherit' });
   const help = execFileSync(process.execPath, ['dist/apps/cli/src/index.js', '--help'], { cwd: pkgRoot, encoding: 'utf8' });
   if (!help.includes('intent bind')) throw new Error('Packaged CLI is incomplete');
+  execFileSync(process.execPath, ['--input-type=module', '--eval', `
+    import { PROVIDER_API_VERSION, resolveProviderCommands } from 'projectmind/provider-sdk';
+    import { gitDiffCheckProvider } from 'projectmind/provider-examples/git-diff-check';
+    if (PROVIDER_API_VERSION !== 'projectmind.provider/v1') throw new Error('Wrong provider API version');
+    const commands = await resolveProviderCommands(gitDiffCheckProvider, { root: process.cwd(), project: { name: 'smoke', root: '.' } });
+    if (commands[0]?.command !== 'git diff --check') throw new Error('Packaged provider example failed');
+  `], { cwd: pkgRoot, stdio: 'inherit' });
   const target = join(root, 'consumer');
   mkdirSync(target);
   writeFileSync(join(target, 'package.json'), JSON.stringify({ name: 'consumer', type: 'module', scripts: { test: 'node --test auth.test.js' } }));
@@ -24,7 +31,7 @@ try {
   run('intent', 'bind', 'REQ-1', '--command', 'node --test --test-reporter=junit auth.test.js', '--test', 'login');
   const verified = run('verify');
   if (!verified.includes('\nVERIFIED\n')) throw new Error('Packaged verification failed');
-  console.log('Packaged CLI scans and verifies a consumer repo with production dependencies only.');
+  console.log('Packaged CLI and provider SDK work with production dependencies only.');
 } finally {
   rmSync(root, { recursive: true, force: true });
 }

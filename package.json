@@ -34,6 +34,16 @@
   "bin": {
     "projectmind": "dist/apps/cli/src/index.js"
   },
+  "exports": {
+    "./provider-sdk": {
+      "types": "./dist/packages/sdk/src/index.d.ts",
+      "import": "./dist/packages/sdk/src/index.js"
+    },
+    "./provider-examples/git-diff-check": {
+      "types": "./dist/packages/sdk/src/examples/git-diff-check.d.ts",
+      "import": "./dist/packages/sdk/src/examples/git-diff-check.js"
+    }
+  },
   "files": [
     "dist/apps",
     "dist/packages",

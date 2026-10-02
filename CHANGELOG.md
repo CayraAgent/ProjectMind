@@ -18,6 +18,7 @@
 - Test the CLI/core on Linux, macOS and Windows and document the narrower Action/package support boundary.
 - Enforce a versioned Project Constitution with dependency-boundary and sensitive-path evidence rules.
 - Add Python 3 AST scanning, local import resolution, unresolved-module diagnostics and structured pytest JUnit evidence. ProofPack v1 remains version 1; `pytest-junit` is an additive provider value and existing Node artifacts remain valid.
+- Replace the unsafe pre-v1 provider placeholder with `projectmind.provider/v1`: providers contribute schema-validated commands while ProjectMind alone executes commands and creates evidence/verdicts. Add a packaged Git diff example provider.
 - Document trust limits and scope the roadmap to the v0.3 application candidate.
 
 No stable release or npm publication has occurred.
