@@ -18,7 +18,7 @@ Implemented:
 - project detection, idempotent initialization, validated JSON contracts
 - JS/TS functions, typed arrows, classes, methods, imports and reexports
 - conservative file-level change and reverse-import impact analysis
-- explicit requirement-to-command evidence bindings
+- explicit requirement-to-command-and-test evidence bindings
 - fresh, single-run evidence tied to Git HEAD and repository content
 - timeouts, bounded logs, fail-closed verification and JSON ProofPacks
 - official MCP SDK stdio server, with command execution disabled by default
@@ -47,11 +47,13 @@ node /path/to/ProjectMind/apps/cli/src/index.ts init
 node /path/to/ProjectMind/apps/cli/src/index.ts intent create "Keep login working" --require "Login succeeds"
 node /path/to/ProjectMind/apps/cli/src/index.ts verify
 # NOT_VERIFIED: REQ-1 has no explicit evidence binding; exit 2
-node /path/to/ProjectMind/apps/cli/src/index.ts intent bind REQ-1 --command "npm run test"
+node /path/to/ProjectMind/apps/cli/src/index.ts intent bind REQ-1 \
+  --command "node --test --test-reporter=junit tests/login.test.js" \
+  --test "login succeeds"
 node /path/to/ProjectMind/apps/cli/src/index.ts verify
 ```
 
-Review `.projectmind/config.json` before execution. Bind each requirement to a relevant targeted check declared there. The command above applies to npm repositories; pnpm repositories detect `pnpm test` instead.
+Review `.projectmind/config.json` before execution. For Node’s built-in test runner, `init` creates a `node-test-junit` command automatically. Bind each test requirement to that exact configured command and one or more exact testcase names. Other test runners remain generic required checks until a structured provider is added; generic test commands cannot prove a test requirement.
 
 Use `changes --base <git-ref>` for committed changes against a fetched ref. Without `--base`, the default is working-tree changes against HEAD. Removed files are listed, but removed symbols are not reconstructed yet.
 

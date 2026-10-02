@@ -21,7 +21,7 @@ try {
   const run = (...args) => execFileSync(process.execPath, [join(pkgRoot, 'dist/apps/cli/src/index.js'), ...args], { cwd: target, encoding: 'utf8' });
   run('init');
   run('intent', 'create', 'Login contract', '--require', 'Login succeeds');
-  run('intent', 'bind', 'REQ-1', '--command', 'npm run test');
+  run('intent', 'bind', 'REQ-1', '--command', 'node --test --test-reporter=junit auth.test.js', '--test', 'login');
   const verified = run('verify');
   if (!verified.includes('\nVERIFIED\n')) throw new Error('Packaged verification failed');
   console.log('Packaged CLI scans and verifies a consumer repo with production dependencies only.');

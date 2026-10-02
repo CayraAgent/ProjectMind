@@ -1,6 +1,31 @@
 {
   "version": 1,
-  "project": { "name": "projectmind-basic-example", "root": ".", "packageManager": "npm" },
-  "scanner": { "include": ["src", "tests"], "extensions": [".js"], "exclude": ["node_modules", "dist"] },
-  "verification": { "commands": [{ "kind": "test", "command": "npm run test", "required": true }] }
+  "project": {
+    "name": "projectmind-basic-example",
+    "root": ".",
+    "packageManager": "npm"
+  },
+  "scanner": {
+    "include": [
+      "src",
+      "tests"
+    ],
+    "extensions": [
+      ".js"
+    ],
+    "exclude": [
+      "node_modules",
+      "dist"
+    ]
+  },
+  "verification": {
+    "commands": [
+      {
+        "kind": "test",
+        "command": "node --test --test-reporter=junit tests/*.test.js",
+        "required": true,
+        "provider": "node-test-junit"
+      }
+    ]
+  }
 }
