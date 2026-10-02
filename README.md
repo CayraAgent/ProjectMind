@@ -86,6 +86,8 @@ Local first · Model agnostic · Deterministic core · AI optional · Evidence >
 
 See [architecture](docs/ARCHITECTURE.md), [Project Constitution](docs/CONSTITUTION.md), [platform support](docs/PLATFORMS.md), [roadmap](ROADMAP.md), [contributing](CONTRIBUTING.md), and [security policy](SECURITY.md).
 
+Maintainers preparing a package release should follow the fail-closed [release readiness guide](docs/RELEASING.md). The distribution name is not considered confirmed until the intended npm maintainer account controls it.
+
 ## ProofPack format
 
 ProjectMind validates each generated ProofPack against its versioned runtime contract before writing it. Non-TypeScript consumers can use the checked-in [ProofPack v1 JSON Schema](schemas/proofpack-v1.schema.json) and [compatibility fixture](fixtures/proofpack-v1/valid.json). Cross-object lineage checks remain enforced by ProjectMind’s runtime validator.

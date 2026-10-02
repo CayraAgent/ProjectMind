@@ -1,6 +1,7 @@
 {
   "name": "projectmind",
   "version": "0.1.0-dev",
+  "description": "Local-first evidence verification and project intelligence for coding agents.",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.25.0",
@@ -16,7 +17,8 @@
     "pack:repro": "pnpm build && node -e \"require('node:fs').mkdirSync('artifacts',{recursive:true})\" && pnpm pack --out artifacts/projectmind-preview-a.tgz && pnpm pack --out artifacts/projectmind-preview-b.tgz && node scripts/compare-packages.mjs artifacts/projectmind-preview-a.tgz artifacts/projectmind-preview-b.tgz",
     "schema:proofpack": "node --experimental-strip-types scripts/generate-proofpack-schema.ts",
     "schema:check": "npm run schema:proofpack && git diff --exit-code -- schemas/proofpack-v1.schema.json",
-    "pilot:mcp": "node --experimental-strip-types --test tests/mcp-compatibility.test.ts"
+    "pilot:mcp": "node --experimental-strip-types --test tests/mcp-compatibility.test.ts",
+    "release:check": "node scripts/release-readiness.mjs"
   },
   "engines": {
     "node": ">=22.18"
@@ -54,6 +56,16 @@
     "NOTICE"
   ],
   "license": "Apache-2.0",
+  "keywords": [
+    "ai-agents",
+    "verification",
+    "evidence",
+    "mcp"
+  ],
+  "homepage": "https://github.com/CayraAgent/ProjectMind#readme",
+  "bugs": {
+    "url": "https://github.com/CayraAgent/ProjectMind/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/CayraAgent/ProjectMind.git"

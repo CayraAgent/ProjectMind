@@ -21,6 +21,7 @@
 - Replace the unsafe pre-v1 provider placeholder with `projectmind.provider/v1`: providers contribute schema-validated commands while ProjectMind alone executes commands and creates evidence/verdicts. Add a packaged Git diff example provider.
 - Add a reusable generic MCP stdio compatibility pilot, Claude-style `CLAUDE_PROJECT_DIR` root handling, server instructions, and a tested project-scoped Claude Code config example. An authenticated interactive Claude Code session remains an explicit pending pilot.
 - Add the first real-repository pilot: checked-in configuration, Constitution and exact-test intent let ProjectMind verify its own trust boundaries in CI and publish the resulting ProofPack artifact.
+- Add a fail-closed stable-release readiness check, publication checklist, complete npm metadata, and package-name-independent smoke imports.
 - Document trust limits and scope the roadmap to the v0.3 application candidate.
 
 No stable release or npm publication has occurred.
