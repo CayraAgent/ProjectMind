@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const evidenceKindSchema = z.enum(["test", "build", "typecheck", "lint", "static", "runtime", "command"]);
-export const evidenceProviderSchema = z.enum(["generic-command", "node-test-junit"]);
+export const evidenceProviderSchema = z.enum(["generic-command", "node-test-junit", "pytest-junit"]);
 export const intentIdSchema = z.string().regex(/^PM-\d{4,}$/, "Invalid intent id");
 const nonempty = z.string().trim().min(1);
 export const configSchema = z.object({
@@ -12,8 +12,8 @@ export const configSchema = z.object({
     kind: evidenceKindSchema, command: nonempty, required: z.boolean(), timeoutMs: z.number().int().min(1).max(600_000).optional(),
     provider: evidenceProviderSchema.optional(),
   }).strict().superRefine((item, context) => {
-    if (item.provider === "node-test-junit" && item.kind !== "test") {
-      context.addIssue({ code: z.ZodIssueCode.custom, message: "node-test-junit is only valid for test evidence" });
+    if ((item.provider === "node-test-junit" || item.provider === "pytest-junit") && item.kind !== "test") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Structured JUnit providers are only valid for test evidence" });
     }
   })).refine((items) => new Set(items.map((item) => item.command)).size === items.length, "Duplicate commands") }).strict(),
 }).strict();
@@ -54,7 +54,7 @@ const testCaseSchema = z.object({
   durationMs: z.number().nonnegative().finite().optional(),
 }).strict();
 const testSummarySchema = z.object({
-  provider: z.literal("node-test-junit"),
+  provider: z.enum(["node-test-junit", "pytest-junit"]),
   discovered: z.number().int().nonnegative(),
   passed: z.number().int().nonnegative(),
   failed: z.number().int().nonnegative(),

@@ -1,9 +1,10 @@
 import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+import { readFile, rm } from "node:fs/promises";
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 import { currentCommit, repositoryState } from "../../git/src/index.ts";
-import { nowIso, projectMindDir, stableId, writeJson, type EvidenceRecord, type ProjectConfig, type VerificationCommand } from "../../core/src/index.ts";
+import { ensureDir, nowIso, projectMindDir, stableId, writeJson, type EvidenceRecord, type ProjectConfig, type VerificationCommand } from "../../core/src/index.ts";
 
 type XmlRecord = Record<string, unknown>;
 
@@ -20,7 +21,7 @@ function collectTestCases(node: unknown): XmlRecord[] {
   ]);
 }
 
-export function parseNodeTestJunit(stdout: string): NonNullable<EvidenceRecord["testSummary"]> {
+function parseJunit(stdout: string, provider: "node-test-junit" | "pytest-junit"): NonNullable<EvidenceRecord["testSummary"]> {
   if (/<!DOCTYPE/i.test(stdout)) throw new Error("Invalid JUnit XML: document types are not allowed.");
   const validation = XMLValidator.validate(stdout);
   if (validation !== true) throw new Error(`Invalid JUnit XML: ${validation.err.msg}`);
@@ -56,7 +57,7 @@ export function parseNodeTestJunit(stdout: string): NonNullable<EvidenceRecord["
     } as const;
   });
   return {
-    provider: "node-test-junit",
+    provider,
     discovered: cases.length,
     passed: cases.filter((item) => item.status === "passed").length,
     failed: cases.filter((item) => item.status === "failed").length,
@@ -64,6 +65,9 @@ export function parseNodeTestJunit(stdout: string): NonNullable<EvidenceRecord["
     cases,
   };
 }
+
+export const parseNodeTestJunit = (stdout: string): NonNullable<EvidenceRecord["testSummary"]> => parseJunit(stdout, "node-test-junit");
+export const parsePytestJunit = (stdout: string): NonNullable<EvidenceRecord["testSummary"]> => parseJunit(stdout, "pytest-junit");
 
 function run(root: string, item: VerificationCommand): Promise<{ exitCode: number; stdout: string; stderr: string; termination?: NonNullable<EvidenceRecord["termination"]> }> {
   return new Promise((resolve) => {
@@ -103,6 +107,11 @@ function run(root: string, item: VerificationCommand): Promise<{ exitCode: numbe
 }
 
 export async function collectCommandEvidence(root: string, item: VerificationCommand, runId = randomUUID()): Promise<EvidenceRecord> {
+  const pytestReport = join(projectMindDir(root), "runtime", "pytest-junit.xml");
+  if (item.provider === "pytest-junit") {
+    await ensureDir(join(projectMindDir(root), "runtime"));
+    await rm(pytestReport, { force: true });
+  }
   const before = await repositoryState(root);
   const startedAt = nowIso();
   const start = Date.now();
@@ -111,9 +120,10 @@ export async function collectCommandEvidence(root: string, item: VerificationCom
   const commit = await currentCommit(root);
   let testSummary: EvidenceRecord["testSummary"];
   let evidenceError: string | undefined;
-  if (item.provider === "node-test-junit") {
+  if (item.provider === "node-test-junit" || item.provider === "pytest-junit") {
     try {
-      testSummary = parseNodeTestJunit(result.stdout);
+      const xml = item.provider === "pytest-junit" ? await readFile(pytestReport, "utf8") : result.stdout;
+      testSummary = parseJunit(xml, item.provider);
     } catch (error) {
       evidenceError = error instanceof Error ? error.message : String(error);
     }

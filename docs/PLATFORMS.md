@@ -14,4 +14,6 @@ ProjectMind's source CLI and deterministic core are tested on Linux and macOS wi
 
 Git and a supported Node.js runtime are required. Verification commands use the operating system's default shell, so reviewed `.projectmind/config.json` commands must be valid for the runner that executes them. ProjectMind normalizes repository paths in its portable contracts and does not follow source symlinks while scanning. Windows command-tree termination uses `taskkill`, but end-to-end Windows command execution remains outside the tested support claim until its runner lifecycle suite is stable.
 
+Scanning configured `.py` files requires a Python 3 interpreter (`python3`, `python`, or the Windows `py -3` launcher). Generated pytest commands use `python -m pytest`; operators must review that command for their environment and install pytest before enabling execution.
+
 This matrix documents tested behavior, not a promise of hermetic execution or support for every shell and filesystem combination. The development preview does not yet claim FreeBSD, containers without Git, Windows versions older than the active GitHub-hosted runner, or a native non-bash GitHub Action path.

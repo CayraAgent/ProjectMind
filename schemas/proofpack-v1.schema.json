@@ -287,7 +287,8 @@
                 "type": "string",
                 "enum": [
                   "generic-command",
-                  "node-test-junit"
+                  "node-test-junit",
+                  "pytest-junit"
                 ]
               },
               "testSummary": {
@@ -295,7 +296,10 @@
                 "properties": {
                   "provider": {
                     "type": "string",
-                    "const": "node-test-junit"
+                    "enum": [
+                      "node-test-junit",
+                      "pytest-junit"
+                    ]
                   },
                   "discovered": {
                     "type": "integer",

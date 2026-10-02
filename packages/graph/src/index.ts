@@ -1,5 +1,6 @@
 import { builtinModules } from "node:module";
 import { existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, normalize, relative, resolve } from "node:path";
 import ts from "typescript";
@@ -20,6 +21,37 @@ function resolveCandidates(base: string, files: Map<string, GraphNode>): string 
   return candidates.find((candidate) => files.has(candidate));
 }
 
+function resolvePythonImport(sourcePath: string, specifier: string, files: Map<string, GraphNode>): string | undefined {
+  const dots = specifier.match(/^\.+/)?.[0].length ?? 0;
+  const module = specifier.slice(dots).replaceAll(".", "/");
+  let base = dots ? dirname(sourcePath) : "";
+  for (let level = 1; level < dots; level += 1) base = dirname(base);
+  const path = normalizeRel(join(base, module));
+  const candidates = [`${path}.py`, `${path}/__init__.py`];
+  const direct = candidates.find((item) => files.has(item));
+  if (direct) return direct;
+  if (!dots) {
+    const suffixes = candidates.map((item) => `/${item}`);
+    const matches = [...files.keys()].filter((item) => candidates.includes(item) || suffixes.some((suffix) => item.endsWith(suffix)));
+    if (matches.length === 1) return matches[0];
+  }
+  return undefined;
+}
+
+function pythonModuleExists(specifier: string): boolean {
+  const top = specifier.replace(/^\.+/, "").split(".")[0];
+  if (!top) return false;
+  const script = "import importlib.util,sys;raise SystemExit(0 if importlib.util.find_spec(sys.argv[1]) else 1)";
+  const attempts = process.platform === "win32" ? [["py", "-3"], ["python"]] : [["python3"], ["python"]];
+  return attempts.some((attempt) => {
+    const command = attempt[0];
+    if (!command) return false;
+    const args = attempt.slice(1);
+    const result = spawnSync(command, [...args, "-c", script, top], { stdio: "ignore" });
+    return !result.error && result.status === 0;
+  });
+}
+
 interface PackageManifest {
   dir: string;
   name?: string;
@@ -27,7 +59,7 @@ interface PackageManifest {
   entry?: string;
 }
 
-const ignoredDirectories = new Set([".git", ".projectmind", "node_modules", "dist", "build", "coverage", ".next"]);
+const ignoredDirectories = new Set([".git", ".projectmind", "node_modules", "dist", "build", "coverage", ".next", ".venv", "venv", "__pycache__", ".pytest_cache"]);
 
 async function findPackageManifests(root: string, dir = root): Promise<PackageManifest[]> {
   const manifests: PackageManifest[] = [];
@@ -78,7 +110,12 @@ async function compilerOptions(root: string): Promise<ts.CompilerOptions> {
   return parsed.options;
 }
 
-function resolveImport(root: string, sourcePath: string, specifier: string, files: Map<string, GraphNode>, options: ts.CompilerOptions, workspaces: Map<string, PackageManifest>): { path?: string; reason?: UnresolvedImport["reason"] } {
+function resolveImport(root: string, sourcePath: string, specifier: string, language: "javascript" | "python", files: Map<string, GraphNode>, options: ts.CompilerOptions, workspaces: Map<string, PackageManifest>): { path?: string; external?: boolean; reason?: UnresolvedImport["reason"] } {
+  if (language === "python") {
+    const path = resolvePythonImport(sourcePath, specifier, files);
+    if (path) return { path };
+    return pythonModuleExists(specifier) ? { external: true } : { reason: "not-found" };
+  }
   if (specifier.startsWith(".")) {
     const direct = resolveCandidates(normalizeRel(join(dirname(sourcePath), specifier)), files);
     if (direct) return { path: direct };
@@ -129,7 +166,7 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
   for (const item of parsed.imports) {
     const from = fileByPath.get(item.sourcePath);
     if (!from) continue;
-    const target = resolveImport(resolve(root), item.sourcePath, item.specifier, fileByPath, options, workspaceByName);
+    const target = resolveImport(resolve(root), item.sourcePath, item.specifier, item.language, fileByPath, options, workspaceByName);
     if (target.path) {
       const to = fileByPath.get(target.path);
       if (!to) continue;
@@ -142,7 +179,7 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
       });
       continue;
     }
-    const packageName = packageSpecifier(item.specifier);
+    const packageName = item.language === "python" ? item.specifier.replace(/^\.+/, "").split(".")[0] ?? "" : packageSpecifier(item.specifier);
     if (!packageName) continue;
     const pkg = packageByName.get(packageName);
     if (pkg) {
@@ -155,6 +192,7 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
       });
       continue;
     }
+    if (target.external) continue;
     if (!item.specifier.startsWith("node:") && !builtinModules.includes(item.specifier)) unresolvedImports.push({ sourcePath: item.sourcePath, specifier: item.specifier, reason: target.reason ?? "not-found" });
   }
 
@@ -179,7 +217,7 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
   return {
     version: 1,
     generatedAt: nowIso(),
-    parser: "typescript-ast-5.9",
+    parser: parsed.files.some((item) => item.path?.endsWith(".py")) ? "typescript-ast-5.9+python-ast-3" : "typescript-ast-5.9",
     nodes,
     edges: [...new Map(edges.map((edge) => [edge.id, edge])).values()],
     unresolvedImports: [...new Map(unresolvedImports.map((item) => [`${item.sourcePath}\0${item.specifier}`, item])).values()]

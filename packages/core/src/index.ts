@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { createHash } from "node:crypto";
 
 export type EvidenceKind = "test" | "build" | "typecheck" | "lint" | "static" | "runtime" | "command";
-export type EvidenceProviderKind = "generic-command" | "node-test-junit";
+export type EvidenceProviderKind = "generic-command" | "node-test-junit" | "pytest-junit";
 export type VerificationStatus = "VERIFIED" | "PARTIALLY_VERIFIED" | "NOT_VERIFIED" | "BLOCKED";
 
 export interface VerificationCommand {
@@ -96,7 +96,7 @@ export interface TestCaseEvidence {
 }
 
 export interface TestEvidenceSummary {
-  provider: "node-test-junit";
+  provider: "node-test-junit" | "pytest-junit";
   discovered: number;
   passed: number;
   failed: number;
