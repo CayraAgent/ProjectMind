@@ -40,7 +40,7 @@ Release gate: stable JS/TS and usable Python behavior, CI/CLI/MCP integration, m
 
 ## v0.3 — community and application checkpoint
 
-- [ ] Engineering Memory Lite retrieval for decision/constraint/incident
+- [x] Engineering Memory Lite retrieval for decision/constraint/incident
 - [ ] contributor scaffold and 30–40 useful independently scoped issues
 - [ ] community-written providers/detectors/adapters reviewed and merged
 - [ ] three stable public releases, recent development, real usage and healthy CI

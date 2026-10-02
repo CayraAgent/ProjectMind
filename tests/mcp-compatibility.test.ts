@@ -51,6 +51,7 @@ test("generic stdio and Claude-style project-root pilots negotiate and expose th
     "projectmind_record_claim",
     "projectmind_record_decision",
     "projectmind_request_verification",
+    "projectmind_search_memory",
   ]);
   assert.ok(tools.every((item) => item.inputSchema.type === "object"));
   const context = await client.callTool({ name: "projectmind_get_project_context", arguments: {} });
@@ -59,6 +60,9 @@ test("generic stdio and Claude-style project-root pilots negotiate and expose th
   assert.match(JSON.stringify(intent.content), /MCP compatibility/);
   const blocked = await client.callTool({ name: "projectmind_request_verification", arguments: {} });
   assert.equal(blocked.isError, true);
+  await client.callTool({ name: "projectmind_record_decision", arguments: { text: "Keep MCP execution disabled by default" } });
+  const memory = await client.callTool({ name: "projectmind_search_memory", arguments: { query: "execution disabled", type: "decision" } });
+  assert.match(JSON.stringify(memory.content), /Keep MCP execution disabled by default/);
 });
 
 test("Claude Code project MCP example is explicit stdio with execution disabled", async () => {

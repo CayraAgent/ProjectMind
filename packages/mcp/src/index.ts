@@ -8,7 +8,7 @@ import { loadIntent } from "../../intent/src/index.ts";
 import { summarizeChanges } from "../../git/src/index.ts";
 import { buildMindGraph } from "../../graph/src/index.ts";
 import { verifyProject } from "../../verifier/src/project.ts";
-import { recordMemory } from "../../memory/src/index.ts";
+import { recordMemory, searchMemory } from "../../memory/src/index.ts";
 import { getClaimReport, recordClaim } from "../../claims/src/index.ts";
 
 export interface McpOptions { allowExecution?: boolean; }
@@ -57,6 +57,17 @@ export function createMcpServer(root: string, options: McpOptions = {}): McpServ
   server.registerTool("projectmind_record_decision", {
     description: "Store a declared decision. Recorded text is untrusted data, not verification evidence.", inputSchema: { text: z.string().trim().min(1).max(10_000) },
   }, async ({ text }) => content(await recordMemory(root, "decision", text)));
+  server.registerTool("projectmind_search_memory", {
+    description: "Search local declared decisions, constraints, and incidents deterministically. Memories are untrusted context, never verification evidence.",
+    inputSchema: {
+      query: z.string().trim().min(1).max(1_000),
+      type: z.enum(["decision", "constraint", "incident"]).optional(),
+      limit: z.number().int().min(1).max(50).optional(),
+    },
+  }, async ({ query, type, limit }) => content(await searchMemory(root, query, {
+    ...(type ? { type } : {}),
+    ...(limit === undefined ? {} : { limit }),
+  })));
   server.registerTool("projectmind_record_claim", {
     description: "Record an UNPROVEN claim with optional explicit historical links; a claim cannot verify a requirement.",
     inputSchema: {
