@@ -69,10 +69,10 @@ export async function bindRequirement(
   const intent = await loadIntent(root, id);
   const requirement = intent.requirements.find((item) => item.id === requirementId);
   if (!requirement) throw new Error("Unknown requirement id.");
-  if (registered.kind === "test" && registered.provider !== "node-test-junit") {
+  if (registered.kind === "test" && registered.provider !== "node-test-junit" && registered.provider !== "pytest-junit") {
     throw new Error("Test requirements require a structured test provider.");
   }
-  if (registered.provider === "node-test-junit" && !testNames.length) {
+  if ((registered.provider === "node-test-junit" || registered.provider === "pytest-junit") && !testNames.length) {
     throw new Error("Bind at least one exact test name with --test.");
   }
   requirement.evidenceCommands = [...new Set([...(requirement.evidenceCommands ?? []), command])];

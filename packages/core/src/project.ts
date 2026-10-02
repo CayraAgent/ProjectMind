@@ -23,7 +23,12 @@ function commandFor(manager: string | undefined, script: string): string {
 
 async function detectVerificationCommands(root: string, manager: string | undefined): Promise<VerificationCommand[]> {
   const packagePath = join(root, "package.json");
-  if (!existsSync(packagePath)) return [];
+  if (!existsSync(packagePath)) {
+    if (existsSync(join(root, "pyproject.toml")) || existsSync(join(root, "pytest.ini")) || existsSync(join(root, "tests"))) {
+      return [{ kind: "test", command: "python -m pytest --junitxml=.projectmind/runtime/pytest-junit.xml", required: true, provider: "pytest-junit" }];
+    }
+    return [];
+  }
   const pkg = JSON.parse(await readFile(packagePath, "utf8")) as { scripts?: Record<string, string> };
   const scripts = pkg.scripts ?? {};
   const kinds = ["test", "typecheck", "build", "lint"] as const;
@@ -41,6 +46,10 @@ async function detectVerificationCommands(root: string, manager: string | undefi
       continue;
     }
     commands.push({ kind, command: commandFor(manager, kind), required: kind === "test" || kind === "typecheck", provider: "generic-command" });
+  }
+  if ((existsSync(join(root, "pyproject.toml")) || existsSync(join(root, "pytest.ini")))
+    && !commands.some((item) => item.provider === "pytest-junit")) {
+    commands.push({ kind: "test", command: "python -m pytest --junitxml=.projectmind/runtime/pytest-junit.xml", required: true, provider: "pytest-junit" });
   }
   return commands;
 }
@@ -74,8 +83,8 @@ export async function initializeProject(rootInput: string): Promise<ProjectConfi
     },
     scanner: {
       include: ["."],
-      extensions: [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"],
-      exclude: ["node_modules", "dist", "build", "coverage", ".next"],
+      extensions: [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".py"],
+      exclude: ["node_modules", "dist", "build", "coverage", ".next", ".venv", "venv", "__pycache__", ".pytest_cache"],
     },
     verification: {
       commands: await detectVerificationCommands(root, manager),
@@ -88,6 +97,7 @@ export async function initializeProject(rootInput: string): Promise<ProjectConfi
     ensureDir(join(pmDir, "proofs")),
     ensureDir(join(pmDir, "memory")),
     ensureDir(join(pmDir, "claims")),
+    ensureDir(join(pmDir, "runtime")),
   ]);
   await writeJson(join(pmDir, "config.json"), config);
   await writeJson(join(pmDir, "constitution.json"), emptyConstitution());

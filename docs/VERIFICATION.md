@@ -27,7 +27,9 @@ Declare that command in `.projectmind/config.json` as well:
 }
 ```
 
-The Node provider parses JUnit XML, rejects zero-test and all-skipped runs, and requires each bound exact testcase name to resolve to one passing case. Missing, duplicate, skipped, failed, or unrelated names do not verify the requirement. The operator still reviews test relevance and strength. v0.1 does not interpret arbitrary prose, verify assertion coverage, or establish that author-written tests are independent. Other runners remain generic checks until they receive a structured provider.
+The Node and pytest providers parse JUnit XML, reject zero-test and all-skipped runs, and require each bound exact testcase name to resolve to one passing case. Missing, duplicate, skipped, failed, or unrelated names do not verify the requirement. Python projects write pytest output to `.projectmind/runtime/pytest-junit.xml`; the old report is removed before every run so a failed command cannot reuse it. The operator still reviews test relevance and strength. ProjectMind does not interpret arbitrary prose, verify assertion coverage, or establish that author-written tests are independent. Other runners remain generic checks until they receive a structured provider.
+
+Python files are parsed with the installed Python 3 `ast` module. Local absolute and relative imports become graph edges; missing modules remain unresolved and therefore fail closed under applicable Constitution dependency rules. Python 3 is required when `.py` files are included in a scan.
 
 ## Refusal cases
 

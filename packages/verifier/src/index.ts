@@ -12,8 +12,8 @@ export function verifyIntent(config: ProjectConfig, intent: IntentContract, evid
   const latest = (command: string) => [...fresh].reverse().find((item) => item.command === command);
   const commandPasses = (record: EvidenceRecord | undefined, command: ProjectConfig["verification"]["commands"][number]): boolean => {
     if (!record || record.kind !== command.kind || record.exitCode !== 0 || Boolean(record.termination) || Boolean(record.evidenceError)) return false;
-    if (command.provider === "node-test-junit") {
-      return record.provider === "node-test-junit"
+    if (command.provider === "node-test-junit" || command.provider === "pytest-junit") {
+      return record.provider === command.provider
         && Boolean(record.testSummary)
         && (record.testSummary?.discovered ?? 0) > 0
         && (record.testSummary?.passed ?? 0) > 0
@@ -39,7 +39,7 @@ export function verifyIntent(config: ProjectConfig, intent: IntentContract, evid
     const failed = records.some((item, index) => item && declaredCommands[index] && !commandPasses(item, declaredCommands[index]));
     const requiresTests = requirement.evidenceKinds.includes("test");
     const testNames = requirement.evidenceTests ?? [];
-    const structuredTestRecords = records.filter((item): item is EvidenceRecord & { testSummary: NonNullable<EvidenceRecord["testSummary"]> } => item?.provider === "node-test-junit" && Boolean(item.testSummary));
+    const structuredTestRecords = records.filter((item): item is EvidenceRecord & { testSummary: NonNullable<EvidenceRecord["testSummary"]> } => (item?.provider === "node-test-junit" || item?.provider === "pytest-junit") && Boolean(item.testSummary));
     const testMatches = testNames.map((name) => structuredTestRecords.flatMap((record) => record.testSummary.cases.filter((item) => item.name === name)));
     const invalidTestBinding = requiresTests && (
       !testNames.length
