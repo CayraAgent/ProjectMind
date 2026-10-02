@@ -147,6 +147,7 @@ export interface ChangeSummary {
   commit?: string;
   files: string[];
   changedSymbols: Array<{ id: string; name: string; type: GraphNode["type"]; path?: string }>;
+  deletedSymbols?: Array<{ id: string; name: string; type: GraphNode["type"]; path?: string }>;
   affectedFiles: string[];
 }
 
