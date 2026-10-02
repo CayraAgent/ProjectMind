@@ -6,6 +6,8 @@
 - Replace regex JS/TS extraction with TypeScript AST scanning.
 - Require explicit requirement-to-command evidence bindings.
 - Add a runtime-validated ProofPack v1 contract, generated public JSON Schema, and compatibility fixture.
+- Resolve TypeScript aliases, NodeNext references and local workspace imports; report unresolved imports explicitly.
+- Reconstruct deleted JS/TS symbols from HEAD or an explicit base ref in change summaries and ProofPacks.
 - Parse Node JUnit evidence and bind requirements to exact passing testcase names; reject empty, skipped, failed, duplicate, unrelated, or malformed reports.
 - Bind evidence to one run, Git HEAD and repository content; refuse stale/mutating runs.
 - Bound output and execution time, and isolate child commands from Node test-worker context.
