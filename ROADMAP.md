@@ -16,7 +16,7 @@ Implemented in the foundation PR:
 Before `v0.1.0` can be released:
 
 - [x] structured Node test results: distinguish zero tests/skips from relevant executed cases
-- [ ] reviewed ProofPack schema and compatibility fixture
+- [x] reviewed ProofPack schema and compatibility fixture
 - [ ] TS config aliases/workspace resolution with unresolved-import reporting
 - [ ] deleted-symbol/base-ref comparison fixtures
 - [ ] reproducible CI-published package and full consumer/action validation

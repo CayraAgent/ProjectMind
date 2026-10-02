@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "projectMindVersion": "0.1.0-dev",
+  "scope": "declared-command-checks",
+  "id": "proof_111111111111111111111111",
+  "createdAt": "2026-10-02T10:00:02.000Z",
+  "project": "auth-demo",
+  "commit": "1111111111111111111111111111111111111111",
+  "intent": {
+    "version": 1,
+    "id": "PM-0001",
+    "title": "Login contract",
+    "createdAt": "2026-10-02T10:00:00.000Z",
+    "requirements": [{
+      "id": "REQ-1",
+      "statement": "Login succeeds",
+      "critical": true,
+      "evidenceKinds": ["test"],
+      "evidenceCommands": ["node --test --test-reporter=junit tests/login.test.js"],
+      "evidenceTests": ["login succeeds"]
+    }],
+    "preserve": [],
+    "outOfScope": []
+  },
+  "change": {
+    "commit": "1111111111111111111111111111111111111111",
+    "files": ["src/login.ts"],
+    "changedSymbols": [{
+      "id": "sym_111111111111111111111111",
+      "name": "login",
+      "type": "FUNCTION",
+      "path": "src/login.ts"
+    }],
+    "affectedFiles": ["tests/login.test.js"]
+  },
+  "evidence": [{
+    "version": 1,
+    "id": "ev_111111111111111111111111",
+    "kind": "test",
+    "command": "node --test --test-reporter=junit tests/login.test.js",
+    "startedAt": "2026-10-02T10:00:00.000Z",
+    "finishedAt": "2026-10-02T10:00:01.000Z",
+    "durationMs": 1000,
+    "exitCode": 0,
+    "stdout": "<testsuites><testcase name=\"login succeeds\"/></testsuites>",
+    "stderr": "",
+    "commit": "1111111111111111111111111111111111111111",
+    "runId": "run-1",
+    "repositoryState": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "repositoryStateAfter": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "provider": "node-test-junit",
+    "testSummary": {
+      "provider": "node-test-junit",
+      "discovered": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [{
+        "id": "test_111111111111111111111111",
+        "name": "login succeeds",
+        "status": "passed",
+        "durationMs": 5
+      }]
+    }
+  }],
+  "verification": {
+    "version": 1,
+    "status": "VERIFIED",
+    "intentId": "PM-0001",
+    "generatedAt": "2026-10-02T10:00:02.000Z",
+    "requiredCommandResults": [{
+      "kind": "test",
+      "status": "PASS",
+      "evidenceId": "ev_111111111111111111111111"
+    }],
+    "requirements": [{
+      "requirementId": "REQ-1",
+      "status": "VERIFIED",
+      "evidenceIds": ["ev_111111111111111111111111"]
+    }],
+    "reasons": [],
+    "repositoryState": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

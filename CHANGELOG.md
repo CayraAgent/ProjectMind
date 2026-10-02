@@ -5,6 +5,7 @@
 - Recover the original local bootstrap and establish the public GitHub project.
 - Replace regex JS/TS extraction with TypeScript AST scanning.
 - Require explicit requirement-to-command evidence bindings.
+- Add a runtime-validated ProofPack v1 contract, generated public JSON Schema, and compatibility fixture.
 - Parse Node JUnit evidence and bind requirements to exact passing testcase names; reject empty, skipped, failed, duplicate, unrelated, or malformed reports.
 - Bind evidence to one run, Git HEAD and repository content; refuse stale/mutating runs.
 - Bound output and execution time, and isolate child commands from Node test-worker context.

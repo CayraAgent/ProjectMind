@@ -72,3 +72,7 @@ The MCP server exposes `projectmind_request_verification`, never a status-settin
 Local first · Model agnostic · Deterministic core · AI optional · Evidence > claims · No self-verification API · Git native · Open formats · Extensible · Secure by default
 
 See [architecture](docs/ARCHITECTURE.md), [roadmap](ROADMAP.md), [contributing](CONTRIBUTING.md), and [security policy](SECURITY.md).
+
+## ProofPack format
+
+ProjectMind validates each generated ProofPack against its versioned runtime contract before writing it. Non-TypeScript consumers can use the checked-in [ProofPack v1 JSON Schema](schemas/proofpack-v1.schema.json) and [compatibility fixture](fixtures/proofpack-v1/valid.json). Cross-object lineage checks remain enforced by ProjectMind’s runtime validator.

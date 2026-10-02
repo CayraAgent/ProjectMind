@@ -1,5 +1,10 @@
 import { join } from "node:path";
 import { nowIso, projectMindDir, stableId, writeJson, type ChangeSummary, type EvidenceRecord, type IntentContract, type ProofPack, type VerificationResult } from "../../core/src/index.ts";
+import { proofPackSchema } from "../../core/src/schema.ts";
+
+export function validateProofPack(value: unknown): ProofPack {
+  return proofPackSchema.parse(value) as ProofPack;
+}
 
 export async function createProofPack(
   root: string,
@@ -23,6 +28,7 @@ export async function createProofPack(
     evidence,
     verification,
   };
+  validateProofPack(proof);
   const suffix = (change.commit ?? "working-tree").slice(0, 10);
   await writeJson(join(projectMindDir(root), "proofs", `${intent.id}-${suffix}-${proof.id}.json`), proof);
   await writeJson(join(projectMindDir(root), "latest-proof.json"), proof);

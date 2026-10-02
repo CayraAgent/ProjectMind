@@ -51,3 +51,11 @@ No authentication or secret handling guarantees should be inferred from a passin
 ## ProofPack
 
 A version-1 JSON artifact includes `projectMindVersion`, `scope: declared-command-checks`, intent/bindings, Git HEAD, changed files, recorded commands and logs, run id, before/after fingerprints and computed verdict. It is unsigned. Review logs before sharing: repository tests can print sensitive data.
+
+## ProofPack v1 compatibility
+
+The runtime source of truth is `proofPackSchema` in `packages/core/src/schema.ts`. Every ProofPack is validated before it is written. The generated public [JSON Schema](../schemas/proofpack-v1.schema.json) is checked into the repository for non-TypeScript consumers, and CI regenerates it to detect drift.
+
+`version: 1` accepts backward-compatible additions only after the runtime schema, public schema, fixture, and documentation are updated together. Removing or changing a required field, identifier format, enum meaning, or verification invariant requires a new format version. `projectMindVersion` records the producing implementation and does not replace the format version.
+
+The fixture under `fixtures/proofpack-v1/valid.json` is a compatibility contract. A VERIFIED v1 pack must cover every intent requirement, reference evidence contained in the pack, contain passing required checks, and bind evidence to one run and repository state. JSON Schema validates portable structure; runtime validation also enforces cross-object relationships that JSON Schema cannot fully express.

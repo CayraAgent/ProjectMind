@@ -9,15 +9,19 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "lint": "node --experimental-strip-types scripts/lint.ts",
-    "validate": "npm run lint && npm run typecheck && npm test && npm run build",
+    "validate": "npm run lint && npm run typecheck && npm run schema:check && npm test && npm run build",
     "projectmind": "node --experimental-strip-types apps/cli/src/index.ts",
-    "pack:check": "pnpm build && pnpm pack --out ../projectmind-preview.tgz"
+    "pack:check": "pnpm build && pnpm pack --out ../projectmind-preview.tgz",
+    "schema:proofpack": "node --experimental-strip-types scripts/generate-proofpack-schema.ts",
+    "schema:check": "npm run schema:proofpack && git diff --exit-code -- schemas/proofpack-v1.schema.json"
   },
   "engines": {
     "node": ">=22.18"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "ajv": "8.17.1",
+    "zod-to-json-schema": "3.25.1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
@@ -31,6 +35,7 @@
   "files": [
     "dist/apps",
     "dist/packages",
+    "schemas",
     "README.md",
     "LICENSE",
     "NOTICE"
