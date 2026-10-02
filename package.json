@@ -18,6 +18,7 @@
     "schema:proofpack": "node --experimental-strip-types scripts/generate-proofpack-schema.ts",
     "schema:check": "npm run schema:proofpack && git diff --exit-code -- schemas/proofpack-v1.schema.json",
     "pilot:mcp": "node --experimental-strip-types --test tests/mcp-compatibility.test.ts",
+    "demo": "node scripts/demo.mjs",
     "release:check": "node scripts/release-readiness.mjs"
   },
   "engines": {

@@ -24,6 +24,7 @@ Before `v0.1.0` can be released:
 - [ ] npm namespace ownership and distribution naming confirmed
 - [x] first real repository pilot: ProjectMind verifies its own trust-boundary intent in CI
 - [ ] clear demo recording
+  - deterministic recording runner and storyboard are complete; the final captured video remains
 
 ## v0.2 — real-world verification
 
