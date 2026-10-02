@@ -7,7 +7,7 @@ import { summarizeChanges } from "../../../packages/git/src/index.ts";
 import { verifyProject } from "../../../packages/verifier/src/project.ts";
 import { formatChanges, formatInit, formatIntent, formatVerification } from "../../../packages/report/src/index.ts";
 import { runMcpServer } from "../../../packages/mcp/src/index.ts";
-import { recordMemory, type MemoryType } from "../../../packages/memory/src/index.ts";
+import { recordMemory, searchMemory, type MemoryType } from "../../../packages/memory/src/index.ts";
 import { getClaimReport, recordClaim } from "../../../packages/claims/src/index.ts";
 
 interface ParsedArgs {
@@ -42,7 +42,7 @@ function optionValues(args: ParsedArgs, key: string): string[] {
 }
 
 function help(): string {
-  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--test <exact-name>] [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  claim record <text> [--evidence <id>] [--intent <id>] [--requirement <id>]\n  claim report\n  remember <decision|constraint|incident> <text>\n  mcp\n`;
+  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--test <exact-name>] [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  claim record <text> [--evidence <id>] [--intent <id>] [--requirement <id>]\n  claim report\n  remember <decision|constraint|incident> <text>\n  recall <query> [--type <decision|constraint|incident>] [--limit <1-50>]\n  mcp\n`;
 }
 
 async function main(): Promise<void> {
@@ -123,6 +123,29 @@ async function main(): Promise<void> {
     }
     const item = await recordMemory(root, type, text);
     console.log(`${item.type} recorded: ${item.id}`);
+    return;
+  }
+
+  if (command === "recall") {
+    const query = [subcommand, ...rest].filter(Boolean).join(" ").trim();
+    const type = optionValues(args, "type")[0] as MemoryType | undefined;
+    if (!query || type && !["decision", "constraint", "incident"].includes(type)) {
+      throw new Error("Usage: projectmind recall <query> [--type decision|constraint|incident] [--limit 1-50]");
+    }
+    const rawLimit = optionValues(args, "limit")[0];
+    const limit = rawLimit === undefined ? undefined : Number(rawLimit);
+    const results = await searchMemory(root, query, { ...(type ? { type } : {}), ...(limit === undefined ? {} : { limit }) });
+    console.log([
+      "ENGINEERING MEMORY (declared local records; never verification evidence)",
+      `Query: ${query}`,
+      `Matches: ${results.length}`,
+      "",
+      ...results.flatMap(({ item, score, matchedTerms }) => [
+        `${item.type.toUpperCase().padEnd(10)} ${item.id}  score=${score}  ${item.createdAt}`,
+        `  ${item.text}`,
+        `  matched: ${matchedTerms.join(", ")}`,
+      ]),
+    ].join("\n"));
     return;
   }
 
