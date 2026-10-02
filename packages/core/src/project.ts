@@ -1,8 +1,10 @@
-import { configSchema } from "./schema.ts";
+import { configSchema, constitutionSchema } from "./schema.ts";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
-import { ensureDir, projectMindDir, readJson, writeJson, type ProjectConfig, type VerificationCommand } from "./index.ts";
+import { ensureDir, projectMindDir, readJson, writeJson, type ProjectConfig, type ProjectConstitution, type VerificationCommand } from "./index.ts";
+
+const emptyConstitution = (): ProjectConstitution => ({ version: 1, dependencyRules: [], sensitivePaths: [] });
 
 function detectPackageManager(root: string): string | undefined {
   if (existsSync(join(root, "pnpm-lock.yaml"))) return "pnpm";
@@ -58,7 +60,10 @@ async function detectProjectName(root: string): Promise<string> {
 
 export async function initializeProject(rootInput: string): Promise<ProjectConfig> {
   const root = resolve(rootInput);
-  if (existsSync(join(projectMindDir(root), "config.json"))) return loadConfig(root);
+  if (existsSync(join(projectMindDir(root), "config.json"))) {
+    if (!existsSync(join(projectMindDir(root), "constitution.json"))) await writeJson(join(projectMindDir(root), "constitution.json"), emptyConstitution());
+    return loadConfig(root);
+  }
   const manager = detectPackageManager(root);
   const config: ProjectConfig = {
     version: 1,
@@ -85,9 +90,16 @@ export async function initializeProject(rootInput: string): Promise<ProjectConfi
     ensureDir(join(pmDir, "claims")),
   ]);
   await writeJson(join(pmDir, "config.json"), config);
+  await writeJson(join(pmDir, "constitution.json"), emptyConstitution());
   return config;
 }
 
 export async function loadConfig(root: string): Promise<ProjectConfig> {
   return configSchema.parse(await readJson(join(projectMindDir(resolve(root)), "config.json"))) as ProjectConfig;
+}
+
+export async function loadConstitution(root: string): Promise<ProjectConstitution> {
+  const path = join(projectMindDir(resolve(root)), "constitution.json");
+  if (!existsSync(path)) return emptyConstitution();
+  return constitutionSchema.parse(await readJson(path)) as ProjectConstitution;
 }
