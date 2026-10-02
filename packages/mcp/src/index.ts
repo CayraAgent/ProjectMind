@@ -3,12 +3,13 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { join } from "node:path";
 import { loadConfig } from "../../core/src/project.ts";
-import { projectMindDir, readJson, writeJson, nowIso, stableId } from "../../core/src/index.ts";
+import { projectMindDir, readJson } from "../../core/src/index.ts";
 import { loadIntent } from "../../intent/src/index.ts";
 import { summarizeChanges } from "../../git/src/index.ts";
 import { buildMindGraph } from "../../graph/src/index.ts";
 import { verifyProject } from "../../verifier/src/project.ts";
 import { recordMemory } from "../../memory/src/index.ts";
+import { getClaimReport, recordClaim } from "../../claims/src/index.ts";
 
 export interface McpOptions { allowExecution?: boolean; }
 const content = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
@@ -38,6 +39,9 @@ export function createMcpServer(root: string, options: McpOptions = {}): McpServ
   server.registerTool("projectmind_get_evidence", {
     description: "Read the last ProofPack as historical data; this never updates its verdict.", inputSchema: {},
   }, async () => content(await readJson(join(projectMindDir(root), "latest-proof.json"))));
+  server.registerTool("projectmind_get_claim_report", {
+    description: "Report historical claim-to-evidence link strength. This never proves claim text or updates a verdict.", inputSchema: {},
+  }, async () => content(await getClaimReport(root)));
   server.registerTool("projectmind_request_verification", {
     description: "Request fresh execution of repository-defined checks. Disabled unless the operator starts the server with PROJECTMIND_ALLOW_EXECUTION=1.",
     inputSchema: { intentId: z.string().regex(/^PM-\d{4,}$/).optional() },
@@ -52,13 +56,18 @@ export function createMcpServer(root: string, options: McpOptions = {}): McpServ
     description: "Store a declared decision. Recorded text is untrusted data, not verification evidence.", inputSchema: { text: z.string().trim().min(1).max(10_000) },
   }, async ({ text }) => content(await recordMemory(root, "decision", text)));
   server.registerTool("projectmind_record_claim", {
-    description: "Record an UNPROVEN claim; a claim cannot verify a requirement.", inputSchema: { text: z.string().trim().min(1).max(10_000) },
-  }, async ({ text }) => {
-    const createdAt = nowIso();
-    const claim = { id: stableId("claim", `${text}:${createdAt}`), text, createdAt, status: "UNPROVEN" };
-    await writeJson(join(projectMindDir(root), "claims", `${claim.id}.json`), claim);
-    return content(claim);
-  });
+    description: "Record an UNPROVEN claim with optional explicit historical links; a claim cannot verify a requirement.",
+    inputSchema: {
+      text: z.string().trim().min(1).max(10_000),
+      evidenceIds: z.array(z.string().regex(/^ev_[a-f0-9]{24}$/)).optional(),
+      intentId: z.string().regex(/^PM-\d{4,}$/).optional(),
+      requirementId: z.string().regex(/^REQ-\d+$/).optional(),
+    },
+  }, async ({ text, evidenceIds, intentId, requirementId }) => content(await recordClaim(root, text, {
+    ...(evidenceIds ? { evidenceIds } : {}),
+    ...(intentId ? { intentId } : {}),
+    ...(requirementId ? { requirementId } : {}),
+  })));
   return server;
 }
 

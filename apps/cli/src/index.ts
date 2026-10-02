@@ -8,6 +8,7 @@ import { verifyProject } from "../../../packages/verifier/src/project.ts";
 import { formatChanges, formatInit, formatIntent, formatVerification } from "../../../packages/report/src/index.ts";
 import { runMcpServer } from "../../../packages/mcp/src/index.ts";
 import { recordMemory, type MemoryType } from "../../../packages/memory/src/index.ts";
+import { getClaimReport, recordClaim } from "../../../packages/claims/src/index.ts";
 
 interface ParsedArgs {
   positionals: string[];
@@ -41,7 +42,7 @@ function optionValues(args: ParsedArgs, key: string): string[] {
 }
 
 function help(): string {
-  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--test <exact-name>] [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  remember <decision|constraint|incident> <text>\n  mcp\n`;
+  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--test <exact-name>] [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  claim record <text> [--evidence <id>] [--intent <id>] [--requirement <id>]\n  claim report\n  remember <decision|constraint|incident> <text>\n  mcp\n`;
 }
 
 async function main(): Promise<void> {
@@ -122,6 +123,32 @@ async function main(): Promise<void> {
     }
     const item = await recordMemory(root, type, text);
     console.log(`${item.type} recorded: ${item.id}`);
+    return;
+  }
+
+  if (command === "claim" && subcommand === "record") {
+    const text = rest.join(" ").trim();
+    if (!text) throw new Error("Usage: projectmind claim record <text>");
+    const claim = await recordClaim(root, text, {
+      evidenceIds: optionValues(args, "evidence"),
+      ...(optionValues(args, "intent")[0] ? { intentId: optionValues(args, "intent")[0] } : {}),
+      ...(optionValues(args, "requirement")[0] ? { requirementId: optionValues(args, "requirement")[0] } : {}),
+    });
+    console.log(`UNPROVEN claim recorded: ${claim.id}`);
+    return;
+  }
+
+  if (command === "claim" && subcommand === "report") {
+    const report = await getClaimReport(root);
+    console.log([
+      "CLAIM LINK REPORT (historical; does not set a verdict)",
+      report.proofId ? `ProofPack: ${report.proofId}` : "ProofPack: none",
+      "",
+      ...report.assessments.flatMap((item) => [
+        `${item.strength.padEnd(29)} ${item.claim.id}  ${item.claim.text}`,
+        `  ${item.reasons.join(" ")}`,
+      ]),
+    ].join("\n"));
     return;
   }
 

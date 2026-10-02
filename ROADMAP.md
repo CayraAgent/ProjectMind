@@ -27,7 +27,7 @@ Before `v0.1.0` can be released:
 ## v0.2 — real-world verification
 
 - [x] Project Constitution and architecture/dependency/sensitive-path rules
-- [ ] claim-to-evidence reporting with explicit strength levels
+- [x] claim-to-evidence reporting with explicit strength levels
 - [ ] Python parser/import/pytest support
 - [ ] versioned provider/plugin SDK with example provider
 - [ ] Claude Code and generic MCP compatibility pilots

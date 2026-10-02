@@ -62,6 +62,8 @@ Use `changes --base <git-ref>` for committed changes against a fetched ref. With
 
 For a runnable example, see [examples/basic-ts](examples/basic-ts/README.md). The regression suite exercises missing evidence → targeted test added → VERIFIED → failing behavior → NOT_VERIFIED.
 
+Free-form claims can carry explicit evidence, intent, and requirement links. `projectmind claim report` reports their historical linkage strength without treating claim text as evidence or changing verification state.
+
 ## MCP and CI
 
 - [Claude Code setup](integrations/claude-code/README.md)

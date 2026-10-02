@@ -15,6 +15,7 @@ The deterministic core is model-independent. No LLM decides a verdict.
 | `mcp` | Official SDK stdio transport, validated tool arguments, operator-controlled execution |
 | `report` / CLI | Human-readable output and exit codes |
 | `memory` | Basic local decision/constraint/incident records; not evidence |
+| `claims` | UNPROVEN declarations and historical link-strength reports; never verdict inputs |
 | `policy` | Deterministic Project Constitution checks for forbidden dependency directions and sensitive-path evidence |
 | `sdk` | Bootstrap placeholder; not a stable plugin API |
 

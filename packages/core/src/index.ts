@@ -179,6 +179,27 @@ export interface ProofPack {
   scope: "declared-command-checks";
 }
 
+export type ClaimStrength = "DECLARED_ONLY" | "EVIDENCE_LINKED" | "VERIFIED_REQUIREMENT_LINKED";
+
+export interface ClaimRecord {
+  version: 1;
+  id: string;
+  text: string;
+  createdAt: string;
+  status: "UNPROVEN";
+  evidenceIds: string[];
+  intentId?: string;
+  requirementId?: string;
+}
+
+export interface ClaimAssessment {
+  claim: ClaimRecord;
+  strength: ClaimStrength;
+  proofId?: string;
+  resolvedEvidenceIds: string[];
+  reasons: string[];
+}
+
 export const projectMindDir = (root: string): string => join(root, ".projectmind");
 
 export async function ensureDir(path: string): Promise<void> {
