@@ -12,7 +12,7 @@
     "validate": "npm run lint && npm run typecheck && npm run schema:check && npm test && npm run build",
     "projectmind": "node --experimental-strip-types apps/cli/src/index.ts",
     "pack:check": "pnpm build && pnpm pack --out ../projectmind-preview.tgz",
-    "pack:repro": "pnpm build && pnpm pack --out ../projectmind-preview-a.tgz && pnpm pack --out ../projectmind-preview-b.tgz && node scripts/compare-packages.mjs ../projectmind-preview-a.tgz ../projectmind-preview-b.tgz",
+    "pack:repro": "pnpm build && node -e \"require('node:fs').mkdirSync('artifacts',{recursive:true})\" && pnpm pack --out artifacts/projectmind-preview-a.tgz && pnpm pack --out artifacts/projectmind-preview-b.tgz && node scripts/compare-packages.mjs artifacts/projectmind-preview-a.tgz artifacts/projectmind-preview-b.tgz",
     "schema:proofpack": "node --experimental-strip-types scripts/generate-proofpack-schema.ts",
     "schema:check": "npm run schema:proofpack && git diff --exit-code -- schemas/proofpack-v1.schema.json"
   },
