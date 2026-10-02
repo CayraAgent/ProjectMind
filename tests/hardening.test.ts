@@ -140,9 +140,10 @@ test("Project Constitution blocks forbidden dependencies and under-evidenced sen
 test("AST scanner ignores comment/string traps and recognizes typed arrows, methods, and reexports", async (t) => {
   const { root, config } = await fixture(t);
   await writeFile(join(root, "src/index.ts"), `// function phantom() {} import "./fake";\nconst text = 'class Fake {}';\nexport { login } from "./auth.js";\nexport const typed = (x: number): number => x;\nconst single = x => x;\nexport class Service { async work() { return import("./auth.js"); } }\nconst dep = require("./auth.js");\n`);
+  await writeFile(join(root, "src/public.d.mts"), "export declare function publicApi(): void;\n");
   const graph = await buildMindGraph(root, config);
   assert.equal(graph.parser, "typescript-ast-5.9");
-  for (const name of ["typed", "single", "Service", "work"]) assert.ok(graph.nodes.some((node) => node.name === name));
+  for (const name of ["typed", "single", "Service", "work", "publicApi"]) assert.ok(graph.nodes.some((node) => node.name === name));
   for (const name of ["phantom", "Fake"]) assert.ok(!graph.nodes.some((node) => node.name === name));
   assert.ok(graph.edges.some((edge) => edge.type === "IMPORTS"));
   const nodes = graph.nodes.map((node) => node.id);

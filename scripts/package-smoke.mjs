@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 const archive = resolve(process.argv[2] ?? '../projectmind-preview.tgz');
@@ -7,12 +7,14 @@ const root = mkdtempSync(join(tmpdir(), 'pm-package-'));
 try {
   execFileSync('tar', ['-xzf', archive, '-C', root]);
   const pkgRoot = join(root, 'package');
+  const packageName = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')).name;
+  if (typeof packageName !== 'string' || packageName.length === 0) throw new Error('Packed package has no name');
   execFileSync('npm', ['install', '--omit=dev', '--ignore-scripts', '--no-package-lock', '--no-audit', '--no-fund'], { cwd: pkgRoot, stdio: 'inherit' });
   const help = execFileSync(process.execPath, ['dist/apps/cli/src/index.js', '--help'], { cwd: pkgRoot, encoding: 'utf8' });
   if (!help.includes('intent bind')) throw new Error('Packaged CLI is incomplete');
   execFileSync(process.execPath, ['--input-type=module', '--eval', `
-    import { PROVIDER_API_VERSION, resolveProviderCommands } from 'projectmind/provider-sdk';
-    import { gitDiffCheckProvider } from 'projectmind/provider-examples/git-diff-check';
+    import { PROVIDER_API_VERSION, resolveProviderCommands } from ${JSON.stringify(packageName + '/provider-sdk')};
+    import { gitDiffCheckProvider } from ${JSON.stringify(packageName + '/provider-examples/git-diff-check')};
     if (PROVIDER_API_VERSION !== 'projectmind.provider/v1') throw new Error('Wrong provider API version');
     const commands = await resolveProviderCommands(gitDiffCheckProvider, { root: process.cwd(), project: { name: 'smoke', root: '.' } });
     if (commands[0]?.command !== 'git diff --check') throw new Error('Packaged provider example failed');
