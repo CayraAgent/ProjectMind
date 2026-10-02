@@ -40,6 +40,8 @@ export function formatChanges(change: ChangeSummary): string {
     "",
     `Changed symbols: ${change.changedSymbols.length}`,
     ...change.changedSymbols.map((symbol) => `  • ${symbol.type.toLowerCase()} ${symbol.name}${symbol.path ? ` (${symbol.path})` : ""}`),
+    `Deleted symbols: ${change.deletedSymbols?.length ?? 0}`,
+    ...(change.deletedSymbols ?? []).map((symbol) => `  • ${symbol.type.toLowerCase()} ${symbol.name}${symbol.path ? ` (${symbol.path})` : ""}`),
     "",
     `Indirectly affected files: ${change.affectedFiles.length}`,
     ...change.affectedFiles.map((file) => `  • ${file}`),

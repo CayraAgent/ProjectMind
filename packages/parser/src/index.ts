@@ -5,6 +5,7 @@ import { stableId, type GraphNode } from "../../core/src/index.ts";
 
 export interface ParsedImport { sourcePath: string; specifier: string; }
 export interface ParsedSource { files: GraphNode[]; symbols: GraphNode[]; imports: ParsedImport[]; }
+export type ParsedSourceContent = Pick<ParsedSource, "symbols" | "imports">;
 const ignoredDirectories = new Set([".git", ".projectmind", "node_modules", "dist", "build", "coverage", ".next"]);
 
 async function walk(root: string, dir: string, extensions: Set<string>, exclude: Set<string>): Promise<string[]> {
@@ -22,6 +23,35 @@ async function walk(root: string, dir: string, extensions: Set<string>, exclude:
   return files;
 }
 
+export function parseSourceContent(path: string, rel: string, source: string): ParsedSourceContent {
+  const symbols: GraphNode[] = [];
+  const imports: ParsedImport[] = [];
+  const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+  const diagnostics = ts.transpileModule(source, { fileName: path, reportDiagnostics: true, compilerOptions: { target: ts.ScriptTarget.ESNext, jsx: ts.JsxEmit.Preserve } }).diagnostics ?? [];
+  const error = diagnostics.find((item) => item.category === ts.DiagnosticCategory.Error);
+  if (error) throw new Error(`Cannot parse ${rel}: ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
+  const addSymbol = (node: ts.Node, name: string, type: "FUNCTION" | "CLASS") => {
+    const start = node.getStart(parsed);
+    symbols.push({ id: stableId("sym", `${rel}:${type}:${name}:${start}`), type, name, path: rel, line: parsed.getLineAndCharacterOfPosition(start).line + 1 });
+  };
+  const addImport = (node: ts.Expression | undefined) => {
+    if (node && ts.isStringLiteralLike(node)) imports.push({ sourcePath: rel, specifier: node.text });
+  };
+  const visit = (node: ts.Node) => {
+    if (ts.isFunctionDeclaration(node) && node.name) addSymbol(node, node.name.text, "FUNCTION");
+    if (ts.isClassDeclaration(node) && node.name) addSymbol(node, node.name.text, "CLASS");
+    if (ts.isMethodDeclaration(node)) addSymbol(node, node.name.getText(parsed), "FUNCTION");
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer
+      && (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))) addSymbol(node, node.name.text, "FUNCTION");
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) addImport(node.moduleSpecifier);
+    if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) addImport(node.moduleReference.expression);
+    if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || ts.isIdentifier(node.expression) && node.expression.text === "require")) addImport(node.arguments[0]);
+    ts.forEachChild(node, visit);
+  };
+  visit(parsed);
+  return { symbols, imports };
+}
+
 export async function parseProject(root: string, extensions: string[], exclude: string[], include = ["."]): Promise<ParsedSource> {
   for (const path of include) {
     if (isAbsolute(path) || path.split(/[\\/]/).includes("..") || /[*?]/.test(path)) throw new Error("Scanner include entries must be relative path prefixes.");
@@ -37,30 +67,9 @@ export async function parseProject(root: string, extensions: string[], exclude: 
     const rel = relative(resolvedRoot, path).replaceAll("\\", "/");
     const isTest = /(?:^|\/)(?:test|tests|__tests__)(?:\/|$)|\.(?:test|spec)\.[^.]+$/.test(rel);
     files.push({ id: stableId("file", rel), type: isTest ? "TEST" : "FILE", name: rel.split("/").at(-1) ?? rel, path: rel });
-    const source = await readFile(path, "utf8");
-    const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
-    const diagnostics = ts.transpileModule(source, { fileName: path, reportDiagnostics: true, compilerOptions: { target: ts.ScriptTarget.ESNext, jsx: ts.JsxEmit.Preserve } }).diagnostics ?? [];
-    const error = diagnostics.find((item) => item.category === ts.DiagnosticCategory.Error);
-    if (error) throw new Error(`Cannot parse ${rel}: ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
-    const addSymbol = (node: ts.Node, name: string, type: "FUNCTION" | "CLASS") => {
-      const start = node.getStart(parsed);
-      symbols.push({ id: stableId("sym", `${rel}:${type}:${name}:${start}`), type, name, path: rel, line: parsed.getLineAndCharacterOfPosition(start).line + 1 });
-    };
-    const addImport = (node: ts.Expression | undefined) => {
-      if (node && ts.isStringLiteralLike(node)) imports.push({ sourcePath: rel, specifier: node.text });
-    };
-    const visit = (node: ts.Node) => {
-      if (ts.isFunctionDeclaration(node) && node.name) addSymbol(node, node.name.text, "FUNCTION");
-      if (ts.isClassDeclaration(node) && node.name) addSymbol(node, node.name.text, "CLASS");
-      if (ts.isMethodDeclaration(node)) addSymbol(node, node.name.getText(parsed), "FUNCTION");
-      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer
-        && (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))) addSymbol(node, node.name.text, "FUNCTION");
-      if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) addImport(node.moduleSpecifier);
-      if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) addImport(node.moduleReference.expression);
-      if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || ts.isIdentifier(node.expression) && node.expression.text === "require")) addImport(node.arguments[0]);
-      ts.forEachChild(node, visit);
-    };
-    visit(parsed);
+    const parsed = parseSourceContent(path, rel, await readFile(path, "utf8"));
+    symbols.push(...parsed.symbols);
+    imports.push(...parsed.imports);
   }
   return { files, symbols, imports };
 }

@@ -56,7 +56,7 @@ node /path/to/ProjectMind/apps/cli/src/index.ts verify
 
 Review `.projectmind/config.json` before execution. For Node’s built-in test runner, `init` creates a `node-test-junit` command automatically. Bind each test requirement to that exact configured command and one or more exact testcase names. Other test runners remain generic required checks until a structured provider is added; generic test commands cannot prove a test requirement.
 
-Use `changes --base <git-ref>` for committed changes against a fetched ref. Without `--base`, the default is working-tree changes against HEAD. Removed files are listed, but removed symbols are not reconstructed yet.
+Use `changes --base <git-ref>` for committed changes against a fetched ref. Without `--base`, the default is working-tree changes against HEAD. ProjectMind reconstructs deleted JS/TS symbols from the comparison commit and reports them separately from symbols present in changed files.
 
 For a runnable example, see [examples/basic-ts](examples/basic-ts/README.md). The regression suite exercises missing evidence → targeted test added → VERIFIED → failing behavior → NOT_VERIFIED.
 

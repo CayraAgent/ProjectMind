@@ -10,7 +10,7 @@ import { createIntent, bindRequirement, loadIntent } from "../packages/intent/sr
 import { collectVerificationEvidence, collectCommandEvidence } from "../packages/evidence/src/index.ts";
 import { verifyIntent } from "../packages/verifier/src/index.ts";
 import { verifyProject } from "../packages/verifier/src/project.ts";
-import { repositoryState, changedFiles } from "../packages/git/src/index.ts";
+import { repositoryState, changedFiles, summarizeChanges } from "../packages/git/src/index.ts";
 import { buildMindGraph } from "../packages/graph/src/index.ts";
 import { parseProject } from "../packages/parser/src/index.ts";
 import { writeJson } from "../packages/core/src/index.ts";
@@ -228,12 +228,21 @@ test("real MCP client negotiates stdio, validates inputs, and cannot execute by 
 });
 
 test("base-ref comparison includes committed changes and rejects option-shaped refs", async (t) => {
-  const { root } = await fixture(t);
-  await writeFile(join(root, "src/auth.ts"), "export const login = () => true;\n");
-  await exec("git", ["add", "src/auth.ts"], { cwd: root });
+  const { root, config } = await fixture(t);
+  await writeFile(join(root, "src/auth.ts"), "export const login = () => true;\nexport function removedAfterBase() { return false; }\n");
+  await writeFile(join(root, "src/obsolete.ts"), "export class ObsoleteService {}\n");
+  await exec("git", ["add", "src/auth.ts", "src/obsolete.ts"], { cwd: root });
   await exec("git", ["-c", "user.name=ProjectMind Test", "-c", "user.email=test@example.com", "commit", "-qm", "auth change"], { cwd: root });
+  const base = (await exec("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim();
+  await writeFile(join(root, "src/auth.ts"), "export const login = () => true;\nexport function addedAfterBase() { return true; }\n");
+  await rm(join(root, "src/obsolete.ts"));
+  await exec("git", ["add", "-A"], { cwd: root });
+  await exec("git", ["-c", "user.name=ProjectMind Test", "-c", "user.email=test@example.com", "commit", "-qm", "replace symbols"], { cwd: root });
   assert.ok(!(await changedFiles(root)).includes("src/auth.ts"));
-  assert.ok((await changedFiles(root, "HEAD~1")).includes("src/auth.ts"));
+  assert.deepEqual((await changedFiles(root, base)).filter((path) => path.startsWith("src/")), ["src/auth.ts", "src/obsolete.ts"]);
+  const summary = await summarizeChanges(root, await buildMindGraph(root, config), base);
+  assert.ok(summary.changedSymbols.some((symbol) => symbol.name === "addedAfterBase"));
+  assert.deepEqual(summary.deletedSymbols?.map((symbol) => symbol.name), ["removedAfterBase", "ObsoleteService"]);
   await assert.rejects(changedFiles(root, "--output=outside"));
 });
 

@@ -99,6 +99,12 @@ const changeSummarySchema = z.object({
     type: z.enum(["FILE", "MODULE", "FUNCTION", "CLASS", "TEST", "PACKAGE"]),
     path: nonempty.optional(),
   }).strict()),
+  deletedSymbols: z.array(z.object({
+    id: nonempty,
+    name: nonempty,
+    type: z.enum(["FILE", "MODULE", "FUNCTION", "CLASS", "TEST", "PACKAGE"]),
+    path: nonempty.optional(),
+  }).strict()).optional(),
   affectedFiles: z.array(z.string()),
 }).strict();
 export const proofPackSchema = z.object({
