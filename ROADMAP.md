@@ -19,7 +19,7 @@ Before `v0.1.0` can be released:
 - [x] reviewed ProofPack schema and compatibility fixture
 - [x] TS config aliases/workspace resolution with unresolved-import reporting
 - [x] deleted-symbol/base-ref comparison fixtures
-- [ ] reproducible CI-published package and full consumer/action validation
+- [x] reproducible CI-published package and full consumer/action validation
 - [ ] cross-platform runner decision; tested OS support documented
 - [ ] npm namespace ownership and distribution naming confirmed
 - [ ] clear demo recording and first real repository pilot
