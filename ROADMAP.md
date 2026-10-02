@@ -20,7 +20,7 @@ Before `v0.1.0` can be released:
 - [x] TS config aliases/workspace resolution with unresolved-import reporting
 - [x] deleted-symbol/base-ref comparison fixtures
 - [x] reproducible CI-published package and full consumer/action validation
-- [ ] cross-platform runner decision; tested OS support documented
+- [x] cross-platform runner decision; tested OS support documented
 - [ ] npm namespace ownership and distribution naming confirmed
 - [ ] clear demo recording and first real repository pilot
 
