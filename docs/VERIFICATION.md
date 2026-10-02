@@ -37,6 +37,7 @@ The Node provider parses JUnit XML, rejects zero-test and all-skipped runs, and 
 - evidence from multiple runs or another repository state
 - repository mutation during execution
 - invalid JSON contract or unsafe intent id (setup error, exit 1)
+- Project Constitution dependency violation or sensitive-path change without its required fresh evidence kinds
 
 Stored ProofPacks are historical artifacts. The CLI does not accept them as current execution evidence. The MCP evidence reader does not refresh a saved verdict.
 
@@ -44,7 +45,7 @@ Stored ProofPacks are historical artifacts. The CLI does not accept them as curr
 
 An agent cannot directly set a verdict through MCP. Removing a `mark_verified` tool alone does not make the system tamper-proof. Anyone with write access to tests/config/source or the artifact directory can weaken checks or forge unsigned JSON. A separately trusted CI runner and reviewed checks provide operational separation; signed provenance is out of scope until a later roadmap.
 
-`preserve` and `outOfScope` are declarations in this version. The graph's TESTED_BY filename links are explicitly heuristic. Neither is verification evidence or architecture enforcement.
+`preserve` and `outOfScope` remain declarations. Architecture enforcement comes only from the reviewed `.projectmind/constitution.json` contract. Dependency rules use resolved graph import edges; sensitive-path rules require fresh passing evidence kinds when matching files change. The graph's TESTED_BY filename links remain heuristic and are not evidence.
 
 No authentication or secret handling guarantees should be inferred from a passing ProjectMind check. The runner inherits the operator's environment, executes trusted repository shell commands, and provides no sandbox/network isolation. Linux/macOS process groups are terminated on timeout; Windows descendant cleanup is not guaranteed and is not part of the tested platform set.
 
