@@ -27,7 +27,7 @@
     "@modelcontextprotocol/sdk": "1.29.0",
     "fast-xml-parser": "5.11.2",
     "typescript": "5.9.3",
-    "zod": "3.25.76"
+    "zod": "4.6.5"
   },
   "bin": {
     "projectmind": "dist/apps/cli/src/index.js"
