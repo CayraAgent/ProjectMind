@@ -1,0 +1,22 @@
+name: Feature proposal
+description: Propose a focused ProjectMind capability
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: trust
+    attributes:
+      label: Trust-model impact
+      description: Does this change evidence, verification, agent permissions, or ProofPacks?

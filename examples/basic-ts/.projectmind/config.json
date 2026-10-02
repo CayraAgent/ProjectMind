@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "project": { "name": "projectmind-basic-example", "root": ".", "packageManager": "npm" },
+  "scanner": { "include": ["src", "tests"], "extensions": [".js"], "exclude": ["node_modules", "dist"] },
+  "verification": { "commands": [{ "kind": "test", "command": "npm run test", "required": true }] }
+}

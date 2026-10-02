@@ -1,0 +1,67 @@
+name: ProjectMind Verify
+description: Run declared checks and report a fresh ProjectMind verdict and ProofPack
+author: ProjectMind contributors
+inputs:
+  intent-id:
+    description: Intent id; defaults to the current intent
+    required: false
+  base-ref:
+    description: Optional fetched Git ref to compare against
+    required: false
+  working-directory:
+    description: Git repository root relative to the checkout
+    default: '.'
+  trust-repository-code:
+    description: Must be true to authorize execution of the checked-out repository's code
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        PROJECTMIND_TRUST: ${{ inputs.trust-repository-code }}
+      run: |
+        if [ "$PROJECTMIND_TRUST" != 'true' ]; then
+          printf '%s\n' 'ProjectMind requires trust-repository-code: true to execute repository-defined checks.' >&2
+          exit 1
+        fi
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 11.25.0
+        package_json_file: ${{ github.action_path }}/package.json
+    - shell: bash
+      working-directory: ${{ github.action_path }}
+      run: pnpm install --frozen-lockfile --ignore-scripts
+    - shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PROJECTMIND_ACTION_ROOT: ${{ github.action_path }}
+        PROJECTMIND_INTENT_ID: ${{ inputs.intent-id }}
+        PROJECTMIND_BASE_REF: ${{ inputs.base-ref }}
+      run: |
+        args=(verify)
+        if [ -n "$PROJECTMIND_INTENT_ID" ]; then args+=("$PROJECTMIND_INTENT_ID"); fi
+        if [ -n "$PROJECTMIND_BASE_REF" ]; then args+=(--base "$PROJECTMIND_BASE_REF"); fi
+        set +e
+        node "$PROJECTMIND_ACTION_ROOT/apps/cli/src/index.ts" "${args[@]}"
+        result=$?
+        set -e
+        if [ "$result" -eq 0 ]; then
+          printf '%s\n' '### ProjectMind: VERIFIED' 'Declared command checks passed for the recorded repository state.' >> "$GITHUB_STEP_SUMMARY"
+        else
+          printf '%s\n' '### ProjectMind: NOT VERIFIED' 'See the check log and ProofPack for missing or failed evidence.' >> "$GITHUB_STEP_SUMMARY"
+        fi
+        exit "$result"
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: projectmind-proofpack
+        path: ${{ inputs.working-directory }}/.projectmind/proofs/*.json
+        if-no-files-found: warn
+        include-hidden-files: true
+branding:
+  icon: check-circle
+  color: gray-dark
