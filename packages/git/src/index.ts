@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { lstat, readFile, readlink, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { ChangeSummary, MindGraph } from "../../core/src/index.ts";
+import { parseSourceContent } from "../../parser/src/index.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -75,6 +76,19 @@ export async function changedFiles(root: string, base?: string): Promise<string[
   return [...new Set(outputs.flatMap((value) => value.split("\0").filter((path) => path && !isDerivedState(path))))].sort();
 }
 
+async function baseCommit(root: string, base?: string): Promise<string> {
+  return base ? (await git(root, ["rev-parse", "--verify", "--end-of-options", `${base}^{commit}`])).trim() : "HEAD";
+}
+
+async function sourceAt(root: string, commit: string, path: string): Promise<string | undefined> {
+  try { return await git(root, ["show", `${commit}:${path}`]); }
+  catch { return undefined; }
+}
+
+function symbolKey(symbol: { name: string; type: string; path?: string }): string {
+  return `${symbol.path ?? ""}\0${symbol.type}\0${symbol.name}`;
+}
+
 export async function summarizeChanges(root: string, graph: MindGraph, base?: string): Promise<ChangeSummary> {
   const files = await changedFiles(root, base);
   const changedSet = new Set(files);
@@ -84,6 +98,27 @@ export async function summarizeChanges(root: string, graph: MindGraph, base?: st
   const changedSymbols = graph.nodes
     .filter((node) => node.path && ["FUNCTION", "CLASS"].includes(node.type) && changedSet.has(node.path))
     .map((node) => ({ id: node.id, name: node.name, type: node.type, ...(node.path ? { path: node.path } : {}) }));
+  const currentSymbolCounts = new Map<string, number>();
+  for (const symbol of graph.nodes.filter((node) => node.path)) {
+    const key = symbolKey(symbol);
+    currentSymbolCounts.set(key, (currentSymbolCounts.get(key) ?? 0) + 1);
+  }
+  const comparisonCommit = await baseCommit(root, base);
+  const deletedSymbols = (await Promise.all(files.map(async (path) => {
+    const source = await sourceAt(root, comparisonCommit, path);
+    if (source === undefined) return [];
+    try { return parseSourceContent(path, path, source).symbols; }
+    catch { return []; }
+  }))).flat()
+    .filter((symbol) => {
+      const key = symbolKey(symbol);
+      const remaining = currentSymbolCounts.get(key) ?? 0;
+      if (remaining === 0) return true;
+      currentSymbolCounts.set(key, remaining - 1);
+      return false;
+    })
+    .map((symbol) => ({ id: symbol.id, name: symbol.name, type: symbol.type, ...(symbol.path ? { path: symbol.path } : {}) }))
+    .sort((a, b) => (a.path ?? "").localeCompare(b.path ?? "") || a.type.localeCompare(b.type) || a.name.localeCompare(b.name));
   const reverseAffected = new Set<string>();
   let expanded = true;
   while (expanded) {
@@ -98,5 +133,5 @@ export async function summarizeChanges(root: string, graph: MindGraph, base?: st
   }
   const affectedFiles = fileNodes.filter((node) => reverseAffected.has(node.id)).flatMap((node) => node.path ? [node.path] : []);
   const commit = await currentCommit(root);
-  return { ...(commit ? { commit } : {}), files, changedSymbols, affectedFiles: [...new Set(affectedFiles)].sort() };
+  return { ...(commit ? { commit } : {}), files, changedSymbols, deletedSymbols, affectedFiles: [...new Set(affectedFiles)].sort() };
 }
