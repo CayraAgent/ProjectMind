@@ -26,6 +26,7 @@ Implemented:
 - official MCP SDK stdio server, with command execution disabled by default
 - reusable generic MCP compatibility pilot and tested Claude Code project configuration
 - GitHub Action with an explicit trust gate, check result, summary and artifact
+- self-hosted repository pilot: ProjectMind verifies its own reviewed trust-boundary intent in CI
 - development packaging and CI on Node 22 / 24
 
 `VERIFIED` means the declared checks ran successfully for the recorded repository state. It does not mean arbitrary natural-language requirements were mathematically proved, the software is bug-free, or a malicious author could not forge a local artifact. Read [verification semantics](docs/VERIFICATION.md).
@@ -40,6 +41,7 @@ pnpm validate
 pnpm pack:check
 node scripts/package-smoke.mjs ../projectmind-preview.tgz
 pnpm pack:repro
+pnpm projectmind verify
 ```
 
 ## Try it on your repository
@@ -73,6 +75,10 @@ Free-form claims can carry explicit evidence, intent, and requirement links. `pr
 - [Provider SDK v1](docs/PROVIDERS.md)
 
 The MCP server exposes `projectmind_request_verification`, never a status-setting tool. Execution requires an operator to enable `PROJECTMIND_ALLOW_EXECUTION=1` at server startup.
+
+## Self-hosted pilot
+
+This repository checks in its reviewed [ProjectMind configuration](.projectmind/config.json), [Constitution](.projectmind/constitution.json), and [trust-boundary intent](.projectmind/intents/PM-0001.json). CI runs ProjectMind against those contracts and uploads the resulting historical ProofPack. See [self-hosting notes](docs/SELF-HOSTING.md).
 
 ## Principles
 

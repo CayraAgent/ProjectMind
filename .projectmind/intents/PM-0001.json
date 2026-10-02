@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "id": "PM-0001",
+  "title": "Preserve ProjectMind trust boundaries",
+  "createdAt": "2026-10-02T19:39:00.420Z",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "statement": "Verdicts require fresh explicitly bound evidence",
+      "critical": true,
+      "evidenceKinds": [
+        "test"
+      ],
+      "evidenceCommands": [
+        "node --experimental-strip-types --test --test-reporter=junit tests/*.test.ts"
+      ],
+      "evidenceTests": [
+        "bound fresh evidence verifies; same-commit source edit invalidates it"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "statement": "MCP cannot execute by default or expose a status-setting tool",
+      "critical": true,
+      "evidenceKinds": [
+        "test"
+      ],
+      "evidenceCommands": [
+        "node --experimental-strip-types --test --test-reporter=junit tests/*.test.ts"
+      ],
+      "evidenceTests": [
+        "real MCP client negotiates stdio, validates inputs, and cannot execute by default or set a verdict"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "statement": "ProofPack v1 remains runtime and JSON Schema compatible",
+      "critical": true,
+      "evidenceKinds": [
+        "test"
+      ],
+      "evidenceCommands": [
+        "node --experimental-strip-types --test --test-reporter=junit tests/*.test.ts"
+      ],
+      "evidenceTests": [
+        "checked-in ProofPack v1 fixture passes runtime and public JSON schemas"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "statement": "Provider SDK cannot author evidence or verdicts",
+      "critical": true,
+      "evidenceKinds": [
+        "test"
+      ],
+      "evidenceCommands": [
+        "node --experimental-strip-types --test --test-reporter=junit tests/*.test.ts"
+      ],
+      "evidenceTests": [
+        "v1 provider resolves validated commands without producing evidence or verdicts"
+      ]
+    }
+  ],
+  "preserve": [],
+  "outOfScope": []
+}

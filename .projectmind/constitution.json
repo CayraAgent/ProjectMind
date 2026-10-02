@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "dependencyRules": [
+    {
+      "id": "ARCH-CORE-NO-MCP",
+      "from": "packages/core",
+      "cannotImport": "packages/mcp"
+    },
+    {
+      "id": "ARCH-SDK-NO-VERIFIER",
+      "from": "packages/sdk",
+      "cannotImport": "packages/verifier"
+    }
+  ],
+  "sensitivePaths": [
+    {
+      "id": "TRUST-CONTRACTS",
+      "prefix": ".projectmind",
+      "requiredEvidenceKinds": ["test", "typecheck"]
+    },
+    {
+      "id": "TRUST-CORE",
+      "prefix": "packages/core",
+      "requiredEvidenceKinds": ["test", "typecheck"]
+    },
+    {
+      "id": "TRUST-VERIFIER",
+      "prefix": "packages/verifier",
+      "requiredEvidenceKinds": ["test", "typecheck"]
+    },
+    {
+      "id": "TRUST-MCP",
+      "prefix": "packages/mcp",
+      "requiredEvidenceKinds": ["test", "typecheck"]
+    }
+  ]
+}

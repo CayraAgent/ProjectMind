@@ -22,7 +22,8 @@ Before `v0.1.0` can be released:
 - [x] reproducible CI-published package and full consumer/action validation
 - [x] cross-platform runner decision; tested OS support documented
 - [ ] npm namespace ownership and distribution naming confirmed
-- [ ] clear demo recording and first real repository pilot
+- [x] first real repository pilot: ProjectMind verifies its own trust-boundary intent in CI
+- [ ] clear demo recording
 
 ## v0.2 — real-world verification
 
@@ -32,7 +33,7 @@ Before `v0.1.0` can be released:
 - [x] versioned provider/plugin SDK with example provider
 - [x] generic MCP stdio compatibility pilot and reusable CI test
 - [ ] interactive Claude Code compatibility pilot; project config/root semantics are automated
-- [ ] at least two real repositories using the released tool
+- [ ] second independent real repository using the released tool; self-hosted pilot is the first
 
 Release gate: stable JS/TS and usable Python behavior, CI/CLI/MCP integration, meaningful provider regression tests and contributor documentation.
 
