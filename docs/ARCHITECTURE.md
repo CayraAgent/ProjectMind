@@ -7,7 +7,7 @@ The deterministic core is model-independent. No LLM decides a verdict.
 | `core` | Data contracts, runtime schema validation, project configuration, stable SHA-256 identifiers |
 | `parser` | TypeScript compiler AST traversal for JS/TS; sorted scanning without following symlinks |
 | `graph` | Symbols, containment, TypeScript-aware imports, workspace/dependency links, unresolved-import diagnostics, labelled test-name heuristics |
-| `git` | Working-tree/base-ref changes, reverse-import impact, repository content fingerprint |
+| `git` | Working-tree/base-ref changes, deleted-symbol reconstruction, reverse-import impact, repository content fingerprint |
 | `intent` | Requirement declarations and explicit command bindings |
 | `evidence` | Fresh command execution, bounded output, timeouts, one run id, Node JUnit parsing |
 | `verifier` | Pure declared-check verdict; orchestration rescans and rejects repository drift |
