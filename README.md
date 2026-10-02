@@ -19,6 +19,7 @@ Implemented:
 - JS/TS functions, typed arrows, classes, methods, imports and reexports
 - TypeScript `paths`/`baseUrl`, NodeNext JS-to-TS and local workspace import resolution, with explicit unresolved-import diagnostics
 - conservative file-level change and reverse-import impact analysis
+- deterministic Project Constitution enforcement for dependency boundaries and sensitive paths
 - explicit requirement-to-command-and-test evidence bindings
 - fresh, single-run evidence tied to Git HEAD and repository content
 - timeouts, bounded logs, fail-closed verification and JSON ProofPacks
@@ -73,7 +74,7 @@ The MCP server exposes `projectmind_request_verification`, never a status-settin
 
 Local first · Model agnostic · Deterministic core · AI optional · Evidence > claims · No self-verification API · Git native · Open formats · Extensible · Secure by default
 
-See [architecture](docs/ARCHITECTURE.md), [platform support](docs/PLATFORMS.md), [roadmap](ROADMAP.md), [contributing](CONTRIBUTING.md), and [security policy](SECURITY.md).
+See [architecture](docs/ARCHITECTURE.md), [Project Constitution](docs/CONSTITUTION.md), [platform support](docs/PLATFORMS.md), [roadmap](ROADMAP.md), [contributing](CONTRIBUTING.md), and [security policy](SECURITY.md).
 
 ## ProofPack format
 

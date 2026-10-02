@@ -31,6 +31,20 @@ export interface ProjectConfig {
   };
 }
 
+export interface ProjectConstitution {
+  version: 1;
+  dependencyRules: Array<{
+    id: string;
+    from: string;
+    cannotImport: string;
+  }>;
+  sensitivePaths: Array<{
+    id: string;
+    prefix: string;
+    requiredEvidenceKinds: EvidenceKind[];
+  }>;
+}
+
 export interface GraphNode {
   id: string;
   type: "FILE" | "MODULE" | "FUNCTION" | "CLASS" | "TEST" | "PACKAGE";

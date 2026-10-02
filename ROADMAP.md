@@ -26,7 +26,7 @@ Before `v0.1.0` can be released:
 
 ## v0.2 — real-world verification
 
-- [ ] Project Constitution and architecture/dependency/sensitive-path rules
+- [x] Project Constitution and architecture/dependency/sensitive-path rules
 - [ ] claim-to-evidence reporting with explicit strength levels
 - [ ] Python parser/import/pytest support
 - [ ] versioned provider/plugin SDK with example provider

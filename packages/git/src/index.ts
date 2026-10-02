@@ -58,7 +58,7 @@ export async function repositoryState(root: string): Promise<string> {
     if (error.code !== "ENOENT") throw error;
     return [];
   });
-  for (const path of [".projectmind/config.json", ".projectmind/current-intent.json", ...intents.sort().map((name) => `.projectmind/intents/${name}`)]) {
+  for (const path of [".projectmind/config.json", ".projectmind/constitution.json", ".projectmind/current-intent.json", ...intents.sort().map((name) => `.projectmind/intents/${name}`)]) {
     hash.update(path);
     try { hash.update(await readFile(join(root, path))); }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
