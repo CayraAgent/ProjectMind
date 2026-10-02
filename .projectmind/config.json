@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "project": {
+    "name": "projectmind",
+    "root": ".",
+    "packageManager": "pnpm"
+  },
+  "scanner": {
+    "include": [
+      "."
+    ],
+    "extensions": [
+      ".ts",
+      ".tsx",
+      ".mts",
+      ".cts",
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".cjs",
+      ".py"
+    ],
+    "exclude": [
+      "node_modules",
+      "dist",
+      "build",
+      "coverage",
+      ".next",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache"
+    ]
+  },
+  "verification": {
+    "commands": [
+      {
+        "kind": "test",
+        "command": "node --experimental-strip-types --test --test-reporter=junit tests/*.test.ts",
+        "required": true,
+        "provider": "node-test-junit"
+      },
+      {
+        "kind": "typecheck",
+        "command": "pnpm typecheck",
+        "required": true,
+        "provider": "generic-command"
+      },
+      {
+        "kind": "build",
+        "command": "pnpm build",
+        "required": false,
+        "provider": "generic-command"
+      },
+      {
+        "kind": "lint",
+        "command": "pnpm lint",
+        "required": false,
+        "provider": "generic-command"
+      }
+    ]
+  }
+}

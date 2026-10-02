@@ -43,6 +43,28 @@ jobs:
           name: projectmind-package-${{ github.sha }}
           path: artifacts/projectmind-preview-a.tgz
           if-no-files-found: error
+  self-verify:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Verify ProjectMind with ProjectMind
+        run: pnpm projectmind verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: projectmind-self-proof-${{ github.sha }}
+          path: .projectmind/latest-proof.json
+          if-no-files-found: error
   platform:
     name: platform (${{ matrix.os }})
     needs: validate
