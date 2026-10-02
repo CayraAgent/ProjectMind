@@ -125,6 +125,45 @@ test("AST scanner ignores comment/string traps and recognizes typed arrows, meth
   await assert.rejects(buildMindGraph(root, config), /Cannot parse/);
 });
 
+test("graph resolves tsconfig aliases, NodeNext paths, workspace packages, cycles, and reports unresolved imports", async (t) => {
+  const { root, config } = await fixture(t);
+  await mkdir(join(root, "src", "lib"), { recursive: true });
+  await mkdir(join(root, "packages", "shared", "src"), { recursive: true });
+  await writeFile(join(root, "tsconfig.json"), JSON.stringify({
+    compilerOptions: {
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      baseUrl: ".",
+      paths: { "@app/*": ["src/*"] },
+    },
+  }));
+  await writeFile(join(root, "packages", "shared", "package.json"), JSON.stringify({
+    name: "@demo/shared",
+    type: "module",
+    exports: "./src/index.ts",
+  }));
+  await writeFile(join(root, "packages", "shared", "src", "index.ts"), "export const shared = true;\n");
+  await writeFile(join(root, "src", "lib", "a.ts"), 'export { b } from "./b.js"; export const a = true;\n');
+  await writeFile(join(root, "src", "lib", "b.ts"), 'export { a } from "./a.js"; export const b = true;\n');
+  await writeFile(join(root, "src", "consumer.ts"), [
+    'import { a } from "@app/lib/a.js";',
+    'import { shared } from "@demo/shared";',
+    'import "missing-package";',
+    'import "node:path";',
+    "export const result = a && shared;",
+  ].join("\n"));
+
+  const graph = await buildMindGraph(root, config);
+  const pathById = new Map(graph.nodes.map((node) => [node.id, node.path]));
+  const imports = graph.edges.filter((edge) => edge.type === "IMPORTS").map((edge) => [pathById.get(edge.from), pathById.get(edge.to)]);
+  assert.ok(imports.some(([from, to]) => from === "src/consumer.ts" && to === "src/lib/a.ts"));
+  assert.ok(imports.some(([from, to]) => from === "src/consumer.ts" && to === "packages/shared/src/index.ts"));
+  assert.ok(imports.some(([from, to]) => from === "src/lib/a.ts" && to === "src/lib/b.ts"));
+  assert.ok(imports.some(([from, to]) => from === "src/lib/b.ts" && to === "src/lib/a.ts"));
+  assert.deepEqual(graph.unresolvedImports, [{ sourcePath: "src/consumer.ts", specifier: "missing-package", reason: "not-found" }]);
+  assert.deepEqual(graph.unresolvedImports, (await buildMindGraph(root, config)).unresolvedImports);
+});
+
 test("scanner includes and exclusions apply; symlink sources are not followed", async (t) => {
   const { root } = await fixture(t);
   await mkdir(join(root, "vendor"));
