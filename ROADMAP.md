@@ -29,7 +29,7 @@ Before `v0.1.0` can be released:
 - [x] Project Constitution and architecture/dependency/sensitive-path rules
 - [x] claim-to-evidence reporting with explicit strength levels
 - [x] Python parser/import/pytest support
-- [ ] versioned provider/plugin SDK with example provider
+- [x] versioned provider/plugin SDK with example provider
 - [ ] Claude Code and generic MCP compatibility pilots
 - [ ] at least two real repositories using the released tool
 

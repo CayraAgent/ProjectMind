@@ -17,7 +17,7 @@ The deterministic core is model-independent. No LLM decides a verdict.
 | `memory` | Basic local decision/constraint/incident records; not evidence |
 | `claims` | UNPROVEN declarations and historical link-strength reports; never verdict inputs |
 | `policy` | Deterministic Project Constitution checks for forbidden dependency directions and sensitive-path evidence |
-| `sdk` | Bootstrap placeholder; not a stable plugin API |
+| `sdk` | Versioned provider contract that contributes validated commands without authoring evidence or verdicts |
 
 The directory structure separates responsibilities; this preview builds one distributable from a root manifest. Individual directories are not separately published packages. The pnpm workspace includes the runnable example. Do not add Turbo solely to orchestrate one distributable.
 
@@ -36,4 +36,4 @@ The fingerprint includes HEAD, Git-tracked and nonignored untracked file bytes/m
 
 ## Incremental interfaces
 
-Public contracts currently have version 1 and are development-preview formats. ProofPack v1 has a generated public JSON Schema and a checked-in compatibility fixture. An interface change must carry a compatibility note and tests before a stable release. The SDK/provider placeholders do not constitute a compatibility commitment yet.
+Public contracts currently have version 1 and are development-preview formats. ProofPack v1 has a generated public JSON Schema and a checked-in compatibility fixture. Provider SDK v1 uses the explicit `projectmind.provider/v1` API identifier and is exported as `projectmind/provider-sdk`. An interface change must carry a compatibility note and tests before a stable release.

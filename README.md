@@ -11,7 +11,7 @@ An open-source, local-first verification and project-intelligence layer for AI c
 
 ## Status: v0.1 development preview
 
-The initial bootstrap has been recovered and hardened. This is not a stable release or an npm-published package. JS/TS scanning uses the TypeScript compiler AST. Python, architecture enforcement, structured test-result providers, and the production plugin SDK remain roadmap work.
+The initial bootstrap has been recovered and hardened. This is not a stable release or an npm-published package. JS/TS scanning uses the TypeScript compiler AST, Python scanning uses Python 3 `ast`, and deterministic policies and structured test providers remain independent of any model.
 
 Implemented:
 
@@ -69,6 +69,7 @@ Free-form claims can carry explicit evidence, intent, and requirement links. `pr
 - [Claude Code setup](integrations/claude-code/README.md)
 - [Generic MCP setup](integrations/generic-mcp/README.md)
 - [GitHub Action setup](integrations/github-action/README.md)
+- [Provider SDK v1](docs/PROVIDERS.md)
 
 The MCP server exposes `projectmind_request_verification`, never a status-setting tool. Execution requires an operator to enable `PROJECTMIND_ALLOW_EXECUTION=1` at server startup.
 
