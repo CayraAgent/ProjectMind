@@ -1,0 +1,25 @@
+name: Release preview
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm validate
+      - run: pnpm pack:check
+      - run: node scripts/package-smoke.mjs ../projectmind-preview.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: projectmind-release-preview
+          path: ../projectmind-preview.tgz

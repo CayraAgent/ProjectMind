@@ -1,3 +1,4 @@
+import { configSchema } from "./schema.ts";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
@@ -44,6 +45,7 @@ async function detectProjectName(root: string): Promise<string> {
 
 export async function initializeProject(rootInput: string): Promise<ProjectConfig> {
   const root = resolve(rootInput);
+  if (existsSync(join(projectMindDir(root), "config.json"))) return loadConfig(root);
   const manager = detectPackageManager(root);
   const config: ProjectConfig = {
     version: 1,
@@ -54,7 +56,7 @@ export async function initializeProject(rootInput: string): Promise<ProjectConfi
     },
     scanner: {
       include: ["."],
-      extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
+      extensions: [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"],
       exclude: ["node_modules", "dist", "build", "coverage", ".next"],
     },
     verification: {
@@ -74,5 +76,5 @@ export async function initializeProject(rootInput: string): Promise<ProjectConfi
 }
 
 export async function loadConfig(root: string): Promise<ProjectConfig> {
-  return readJson<ProjectConfig>(join(projectMindDir(resolve(root)), "config.json"));
+  return configSchema.parse(await readJson(join(projectMindDir(resolve(root)), "config.json"))) as ProjectConfig;
 }

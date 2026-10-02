@@ -1,38 +1,20 @@
-# Contributing to ProjectMind
+# Contributing
 
-ProjectMind is designed to be contributor-friendly. Small, isolated integrations are preferred over changes that couple unrelated subsystems.
-
-## Setup
+Requires Node 22.18+ and pnpm 11.25.0.
 
 ```bash
-git clone <your-fork>
+git clone https://github.com/CayraAgent/ProjectMind.git
 cd ProjectMind
-npm test
-npm run typecheck
+pnpm install --frozen-lockfile
+pnpm validate
 ```
 
-Node 22.6+ is required. The repository is dependency-light by design.
+Read [architecture](docs/ARCHITECTURE.md) and [verification semantics](docs/VERIFICATION.md) before changing the trust model. Tests use isolated temporary Git repositories and real command execution. Add a behavioral regression for a bypass/failure case; do not substitute a command that exits 0 for a real test when demonstrating verification.
 
-## Contribution areas
+Good first contributions include a focused fixture, parser regression, package-manager detector or documentation improvement. The SDK is a placeholder; ask for/review the provider contract before building a new adapter against it.
 
-Good first contribution categories include:
+For every issue/PR, describe the problem, involved files, expected behavior, acceptance tests and documentation changes. Use conventional commit titles. The maintainer reviews correctness, scope and trust-model changes before merge. Large changes need an RFC under `docs/rfcs/` before implementation.
 
-- language support
-- test/evidence providers
-- framework detection
-- agent adapters
-- documentation
-- fixtures and regression tests
+Run `pnpm validate`. Build/distribution changes additionally require `pnpm pack:check` and `node scripts/package-smoke.mjs ../projectmind-preview.tgz`. Never add secrets, raw test credentials or unreviewed generated ProofPacks to the repository.
 
-Every behavioral change should include a test. Changes to verification semantics should also include a short rationale in the PR description.
-
-## Pull requests
-
-Keep PRs focused. Explain:
-
-1. the problem,
-2. the intended behavior,
-3. how it was verified,
-4. any known limitations.
-
-ProjectMind follows the rule it enforces elsewhere: claims are not evidence.
+GitHub Actions tests the maintained Node versions on Linux. Additional OS support must be established by tests rather than assumed.

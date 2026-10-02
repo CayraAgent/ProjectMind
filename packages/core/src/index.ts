@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { createHash } from "node:crypto";
 
 export type EvidenceKind = "test" | "build" | "typecheck" | "lint" | "static" | "runtime" | "command";
 export type VerificationStatus = "VERIFIED" | "PARTIALLY_VERIFIED" | "NOT_VERIFIED" | "BLOCKED";
@@ -8,6 +9,7 @@ export interface VerificationCommand {
   kind: EvidenceKind;
   command: string;
   required: boolean;
+  timeoutMs?: number;
 }
 
 export interface ProjectConfig {
@@ -57,6 +59,7 @@ export interface Requirement {
   statement: string;
   critical: boolean;
   evidenceKinds: EvidenceKind[];
+  evidenceCommands?: string[];
 }
 
 export interface IntentContract {
@@ -81,6 +84,10 @@ export interface EvidenceRecord {
   stdout: string;
   stderr: string;
   commit?: string;
+  runId?: string;
+  repositoryState?: string;
+  repositoryStateAfter?: string;
+  termination?: "timeout" | "output-limit" | "spawn-error";
 }
 
 export interface RequirementVerification {
@@ -102,6 +109,7 @@ export interface VerificationResult {
   }>;
   requirements: RequirementVerification[];
   reasons: string[];
+  repositoryState?: string;
 }
 
 export interface ChangeSummary {
@@ -121,6 +129,8 @@ export interface ProofPack {
   change: ChangeSummary;
   evidence: EvidenceRecord[];
   verification: VerificationResult;
+  projectMindVersion: string;
+  scope: "declared-command-checks";
 }
 
 export const projectMindDir = (root: string): string => join(root, ".projectmind");
@@ -139,12 +149,7 @@ export async function writeJson(path: string, value: unknown): Promise<void> {
 }
 
 export function stableId(prefix: string, input: string): string {
-  let hash = 2166136261;
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return `${prefix}_${(hash >>> 0).toString(16).padStart(8, "0")}`;
+  return `${prefix}_${createHash("sha256").update(input).digest("hex").slice(0, 24)}`;
 }
 
 export function nowIso(): string {

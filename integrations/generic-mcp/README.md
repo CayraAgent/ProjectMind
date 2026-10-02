@@ -1,5 +1,5 @@
-# Generic MCP integration
+# Generic MCP
 
-Any MCP client with stdio support can launch the ProjectMind MCP server from the project root.
+Start `node /absolute/path/ProjectMind/apps/cli/src/index.ts mcp` from the target repository root. stdout carries MCP protocol messages only. The official v1 MCP TypeScript SDK handles negotiation, validation, and stdio transport.
 
-Available tools currently include project context, intent retrieval, changed-symbol inspection, verification requests, decisions, and claims.
+The process is local, requires no model credentials, and exposes the same tool set to any compatible client. Execution is disabled unless the operator supplies `PROJECTMIND_ALLOW_EXECUTION=1` at startup. The transport is tested using the SDK's real stdio client; each named agent client still needs its own compatibility pilot.

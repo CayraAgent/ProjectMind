@@ -7,10 +7,10 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { initializeProject, loadConfig } from "../packages/core/src/project.ts";
 import { buildMindGraph, persistMindGraph } from "../packages/graph/src/index.ts";
-import { createIntent } from "../packages/intent/src/index.ts";
+import { createIntent, bindRequirement, loadIntent } from "../packages/intent/src/index.ts";
 import { collectVerificationEvidence } from "../packages/evidence/src/index.ts";
 import { verifyIntent } from "../packages/verifier/src/index.ts";
-import { summarizeChanges } from "../packages/git/src/index.ts";
+import { summarizeChanges, repositoryState } from "../packages/git/src/index.ts";
 import { createProofPack } from "../packages/proofpack/src/index.ts";
 
 const execFileAsync = promisify(execFile);
@@ -18,11 +18,13 @@ const execFileAsync = promisify(execFile);
 async function fixture(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "projectmind-"));
   await mkdir(join(root, "src"), { recursive: true });
+  await mkdir(join(root, "tests"), { recursive: true });
+  await writeFile(join(root, "tests/auth.test.js"), `import test from "node:test"; import assert from "node:assert/strict"; import { login } from "../src/auth.ts"; test("login", () => assert.equal(login("demo"), true));`);
   await writeFile(join(root, "package.json"), JSON.stringify({
     name: "fixture-app",
+    type: "module",
     scripts: {
-      test: "node -e \"process.exit(0)\"",
-      typecheck: "node -e \"process.exit(0)\""
+      test: "node --experimental-strip-types --test tests/auth.test.js"
     }
   }, null, 2));
   await writeFile(join(root, "src", "auth.ts"), `export function login(user: string) { return user.length > 0; }\n`);
@@ -53,7 +55,10 @@ test("verification derives VERIFIED from passing evidence", async () => {
   await persistMindGraph(root, graph);
   const intent = await createIntent(root, "Keep authentication working", ["Authentication remains functional"], [], []);
   const evidence = await collectVerificationEvidence(root, config);
-  const result = verifyIntent(config, intent, evidence);
+  await bindRequirement(root, "REQ-1", "npm run test");
+  const bound = await loadIntent(root);
+  const freshEvidence = await collectVerificationEvidence(root, config);
+  const result = verifyIntent(config, bound, freshEvidence, await repositoryState(root));
 
   assert.equal(result.status, "VERIFIED");
   assert.equal(result.requirements[0]?.status, "VERIFIED");
@@ -78,7 +83,10 @@ test("change summary and ProofPack preserve intent/change/evidence lineage", asy
   await writeFile(join(root, "src", "auth.ts"), `export function login(user: string) { return user.trim().length > 0; }\n`);
   const change = await summarizeChanges(root, graph);
   const evidence = await collectVerificationEvidence(root, config);
-  const verification = verifyIntent(config, intent, evidence);
+  await bindRequirement(root, "REQ-1", "npm run test");
+  const bound = await loadIntent(root);
+  const freshEvidence = await collectVerificationEvidence(root, config);
+  const verification = verifyIntent(config, bound, freshEvidence, await repositoryState(root));
   const proof = await createProofPack(root, config.project.name, intent, change, evidence, verification);
 
   assert.ok(change.files.includes("src/auth.ts"));

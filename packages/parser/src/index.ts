@@ -1,102 +1,66 @@
 import { readdir, readFile } from "node:fs/promises";
-import { extname, join, relative, resolve } from "node:path";
+import { extname, join, relative, resolve, isAbsolute } from "node:path";
+import ts from "typescript";
 import { stableId, type GraphNode } from "../../core/src/index.ts";
 
-export interface ParsedImport {
-  sourcePath: string;
-  specifier: string;
-}
-
-export interface ParsedSource {
-  files: GraphNode[];
-  symbols: GraphNode[];
-  imports: ParsedImport[];
-}
-
+export interface ParsedImport { sourcePath: string; specifier: string; }
+export interface ParsedSource { files: GraphNode[]; symbols: GraphNode[]; imports: ParsedImport[]; }
 const ignoredDirectories = new Set([".git", ".projectmind", "node_modules", "dist", "build", "coverage", ".next"]);
 
 async function walk(root: string, dir: string, extensions: Set<string>, exclude: Set<string>): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
+  const entries = (await readdir(dir, { withFileTypes: true })).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   const files: string[] = [];
   for (const entry of entries) {
     const full = join(dir, entry.name);
     const rel = relative(root, full).replaceAll("\\", "/");
+    if ([...exclude].some((path) => rel === path || rel.startsWith(`${path}/`)) || exclude.has(entry.name)) continue;
     if (entry.isDirectory()) {
-      if (ignoredDirectories.has(entry.name) || exclude.has(rel) || exclude.has(entry.name)) continue;
-      files.push(...(await walk(root, full, extensions, exclude)));
-      continue;
-    }
-    if (extensions.has(extname(entry.name))) files.push(full);
+      if (!ignoredDirectories.has(entry.name)) files.push(...await walk(root, full, extensions, exclude));
+    } else if (entry.isFile() && extensions.has(extname(entry.name))) files.push(full);
+    // Symlinks are never followed outside the repository.
   }
   return files;
 }
 
-function lineNumber(source: string, index: number): number {
-  return source.slice(0, index).split("\n").length;
-}
-
-function extractSymbols(path: string, source: string, rel: string): GraphNode[] {
-  const symbols: GraphNode[] = [];
-  const patterns: Array<{ type: "FUNCTION" | "CLASS"; regex: RegExp }> = [
-    { type: "FUNCTION", regex: /(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g },
-    { type: "FUNCTION", regex: /(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/g },
-    { type: "CLASS", regex: /(?:export\s+)?class\s+([A-Za-z_$][\w$]*)/g },
-  ];
-
-  for (const pattern of patterns) {
-    let match: RegExpExecArray | null;
-    while ((match = pattern.regex.exec(source)) !== null) {
-      const name = match[1];
-      if (!name) continue;
-      symbols.push({
-        id: stableId("sym", `${rel}:${pattern.type}:${name}:${match.index}`),
-        type: pattern.type,
-        name,
-        path: rel,
-        line: lineNumber(source, match.index),
-      });
-    }
+export async function parseProject(root: string, extensions: string[], exclude: string[], include = ["."]): Promise<ParsedSource> {
+  for (const path of include) {
+    if (isAbsolute(path) || path.split(/[\\/]/).includes("..") || /[*?]/.test(path)) throw new Error("Scanner include entries must be relative path prefixes.");
   }
-  return symbols;
-}
-
-function extractImports(source: string, rel: string): ParsedImport[] {
-  const out: ParsedImport[] = [];
-  const patterns = [
-    /(?:import|export)\s+(?:[^"']+?\s+from\s+)?["']([^"']+)["']/g,
-    /require\(\s*["']([^"']+)["']\s*\)/g,
-    /import\(\s*["']([^"']+)["']\s*\)/g,
-  ];
-  for (const regex of patterns) {
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(source)) !== null) {
-      const specifier = match[1];
-      if (specifier) out.push({ sourcePath: rel, specifier });
-    }
-  }
-  return out;
-}
-
-export async function parseProject(root: string, extensions: string[], exclude: string[]): Promise<ParsedSource> {
   const resolvedRoot = resolve(root);
-  const sourceFiles = await walk(resolvedRoot, resolvedRoot, new Set(extensions), new Set(exclude));
+  const sourceFiles = (await walk(resolvedRoot, resolvedRoot, new Set(extensions), new Set(exclude)))
+    .filter((path) => include.some((prefix) => prefix === "." || relative(resolvedRoot, path).replaceAll("\\", "/") === prefix
+      || relative(resolvedRoot, path).replaceAll("\\", "/").startsWith(`${prefix.replace(/\/$/, "")}/`)));
   const files: GraphNode[] = [];
   const symbols: GraphNode[] = [];
   const imports: ParsedImport[] = [];
-
   for (const path of sourceFiles) {
     const rel = relative(resolvedRoot, path).replaceAll("\\", "/");
     const isTest = /(?:^|\/)(?:test|tests|__tests__)(?:\/|$)|\.(?:test|spec)\.[^.]+$/.test(rel);
-    files.push({
-      id: stableId("file", rel),
-      type: isTest ? "TEST" : "FILE",
-      name: rel.split("/").at(-1) ?? rel,
-      path: rel,
-    });
+    files.push({ id: stableId("file", rel), type: isTest ? "TEST" : "FILE", name: rel.split("/").at(-1) ?? rel, path: rel });
     const source = await readFile(path, "utf8");
-    symbols.push(...extractSymbols(path, source, rel));
-    imports.push(...extractImports(source, rel));
+    const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+    const diagnostics = ts.transpileModule(source, { fileName: path, reportDiagnostics: true, compilerOptions: { target: ts.ScriptTarget.ESNext, jsx: ts.JsxEmit.Preserve } }).diagnostics ?? [];
+    const error = diagnostics.find((item) => item.category === ts.DiagnosticCategory.Error);
+    if (error) throw new Error(`Cannot parse ${rel}: ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
+    const addSymbol = (node: ts.Node, name: string, type: "FUNCTION" | "CLASS") => {
+      const start = node.getStart(parsed);
+      symbols.push({ id: stableId("sym", `${rel}:${type}:${name}:${start}`), type, name, path: rel, line: parsed.getLineAndCharacterOfPosition(start).line + 1 });
+    };
+    const addImport = (node: ts.Expression | undefined) => {
+      if (node && ts.isStringLiteralLike(node)) imports.push({ sourcePath: rel, specifier: node.text });
+    };
+    const visit = (node: ts.Node) => {
+      if (ts.isFunctionDeclaration(node) && node.name) addSymbol(node, node.name.text, "FUNCTION");
+      if (ts.isClassDeclaration(node) && node.name) addSymbol(node, node.name.text, "CLASS");
+      if (ts.isMethodDeclaration(node)) addSymbol(node, node.name.getText(parsed), "FUNCTION");
+      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer
+        && (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))) addSymbol(node, node.name.text, "FUNCTION");
+      if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) addImport(node.moduleSpecifier);
+      if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) addImport(node.moduleReference.expression);
+      if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || ts.isIdentifier(node.expression) && node.expression.text === "require")) addImport(node.arguments[0]);
+      ts.forEachChild(node, visit);
+    };
+    visit(parsed);
   }
-
   return { files, symbols, imports };
 }

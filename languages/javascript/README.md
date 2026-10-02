@@ -1,3 +1,3 @@
 # JavaScript
 
-Initial built-in scanning is implemented in the core parser. A dedicated language plugin boundary will replace this during v0.2.
+The TypeScript compiler AST also parses JS/JSX/MJS/CJS files. Import links are deterministic for supported relative paths. Dynamic expressions and runtime resolution are not inferred.

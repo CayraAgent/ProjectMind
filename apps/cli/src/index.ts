@@ -1,13 +1,10 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
 import { initializeProject, loadConfig } from "../../../packages/core/src/project.ts";
-import { projectMindDir, readJson, type MindGraph } from "../../../packages/core/src/index.ts";
 import { buildMindGraph, persistMindGraph } from "../../../packages/graph/src/index.ts";
-import { createIntent, loadIntent } from "../../../packages/intent/src/index.ts";
+import { createIntent, bindRequirement } from "../../../packages/intent/src/index.ts";
 import { summarizeChanges } from "../../../packages/git/src/index.ts";
-import { collectVerificationEvidence } from "../../../packages/evidence/src/index.ts";
-import { verifyIntent } from "../../../packages/verifier/src/index.ts";
-import { createProofPack } from "../../../packages/proofpack/src/index.ts";
+import { verifyProject } from "../../../packages/verifier/src/project.ts";
 import { formatChanges, formatInit, formatIntent, formatVerification } from "../../../packages/report/src/index.ts";
 import { runMcpServer } from "../../../packages/mcp/src/index.ts";
 import { recordMemory, type MemoryType } from "../../../packages/memory/src/index.ts";
@@ -44,7 +41,7 @@ function optionValues(args: ParsedArgs, key: string): string[] {
 }
 
 function help(): string {
-  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  verify [intent-id]\n  remember <decision|constraint|incident> <text>\n  mcp\n`;
+  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  remember <decision|constraint|incident> <text>\n  mcp\n`;
 }
 
 async function main(): Promise<void> {
@@ -52,7 +49,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const [command, subcommand, ...rest] = args.positionals;
 
-  if (!command || command === "help" || command === "--help" || command === "-h") {
+  if (args.options.has("help") || !command || command === "help" || command === "--help" || command === "-h") {
     console.log(help());
     return;
   }
@@ -76,8 +73,8 @@ async function main(): Promise<void> {
   }
 
   if (command === "changes") {
-    const graph = await readJson<MindGraph>(`${projectMindDir(root)}/graph.json`);
-    console.log(formatChanges(await summarizeChanges(root, graph)));
+    const graph = await buildMindGraph(root, await loadConfig(root));
+    console.log(formatChanges(await summarizeChanges(root, graph, optionValues(args, "base")[0])));
     return;
   }
 
@@ -95,15 +92,17 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === "intent" && subcommand === "bind") {
+    const requirementId = rest[0];
+    const configuredCommand = optionValues(args, "command")[0];
+    if (!requirementId || !configuredCommand) throw new Error("Usage: intent bind REQ-1 --command <configured-command>");
+    const intent = await bindRequirement(root, requirementId, configuredCommand, optionValues(args, "intent")[0]);
+    console.log(formatIntent(intent));
+    return;
+  }
+
   if (command === "verify") {
-    const config = await loadConfig(root);
-    const intentId = subcommand;
-    const intent = await loadIntent(root, intentId);
-    const graph = await readJson<MindGraph>(`${projectMindDir(root)}/graph.json`);
-    const evidence = await collectVerificationEvidence(root, config);
-    const result = verifyIntent(config, intent, evidence);
-    const change = await summarizeChanges(root, graph);
-    const proof = await createProofPack(root, config.project.name, intent, change, evidence, result);
+    const { intent, evidence, result, proof } = await verifyProject(root, subcommand, optionValues(args, "base")[0]);
     console.log(`${formatVerification(intent, evidence, result)}\n\nProofPack: ${proof.id}`);
     if (result.status !== "VERIFIED") process.exitCode = 2;
     return;
@@ -121,7 +120,7 @@ async function main(): Promise<void> {
   }
 
   if (command === "mcp") {
-    await runMcpServer(root);
+    await runMcpServer(root, { allowExecution: process.env.PROJECTMIND_ALLOW_EXECUTION === "1" });
     return;
   }
 

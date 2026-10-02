@@ -4,3 +4,7 @@ dist/
 *.log
 .projectmind/cache/
 .projectmind/runtime/
+.projectmind/evidence/
+.projectmind/proofs/
+.projectmind/graph.json
+.projectmind/latest-proof.json

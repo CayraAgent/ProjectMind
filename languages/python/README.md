@@ -1,3 +1,3 @@
 # Python
 
-Python support is planned for v0.2. The current v0.1 scanner intentionally focuses on JS/TS rather than claiming incomplete support.
+Planned for v0.2. No Python parser or pytest evidence provider is implemented in this preview.

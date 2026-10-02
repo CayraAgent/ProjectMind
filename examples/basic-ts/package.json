@@ -2,8 +2,7 @@
   "name": "projectmind-basic-example",
   "private": true,
   "scripts": {
-    "test": "node --test tests/*.test.js",
-    "typecheck": "node -e \"process.exit(0)\"",
-    "build": "node -e \"process.exit(0)\""
-  }
+    "test": "node --test tests/*.test.js"
+  },
+  "type": "module"
 }

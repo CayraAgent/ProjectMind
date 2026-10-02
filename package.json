@@ -3,20 +3,40 @@
   "version": "0.1.0-dev",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "lint": "node --experimental-strip-types scripts/lint.ts",
     "validate": "npm run lint && npm run typecheck && npm test && npm run build",
-    "projectmind": "node --experimental-strip-types apps/cli/src/index.ts"
+    "projectmind": "node --experimental-strip-types apps/cli/src/index.ts",
+    "pack:check": "pnpm build && pnpm pack --out ../projectmind-preview.tgz"
   },
   "engines": {
-    "node": ">=22.6"
+    "node": ">=22.18"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.0"
+    "@types/node": "^22.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "zod": "3.25.76",
+    "typescript": "5.9.3"
+  },
+  "bin": {
+    "projectmind": "dist/apps/cli/src/index.js"
+  },
+  "files": [
+    "dist/apps",
+    "dist/packages",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CayraAgent/ProjectMind.git"
   }
 }

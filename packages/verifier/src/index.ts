@@ -1,50 +1,40 @@
 import { nowIso, type EvidenceRecord, type IntentContract, type ProjectConfig, type VerificationResult } from "../../core/src/index.ts";
 
-export function verifyIntent(config: ProjectConfig, intent: IntentContract, evidence: EvidenceRecord[]): VerificationResult {
-  const requiredCommandResults: VerificationResult["requiredCommandResults"] = [];
+export function verifyIntent(config: ProjectConfig, intent: IntentContract, evidence: EvidenceRecord[], state?: string): VerificationResult {
   const reasons: string[] = [];
+  const fresh = evidence.filter((item) => state && item.repositoryState === state && item.repositoryStateAfter === state && item.runId);
+  if (!state) reasons.push("Repository state is missing.");
+  if (evidence.some((item) => !fresh.includes(item))) reasons.push("Evidence is stale or the repository changed during execution.");
+  if (new Set(fresh.map((item) => item.runId)).size > 1) reasons.push("Evidence from different runs cannot be combined.");
+  if (!intent.requirements.length) reasons.push("Intent has no requirements.");
+  if (!config.verification.commands.some((item) => item.required)) reasons.push("At least one required command must be configured.");
 
-  for (const command of config.verification.commands.filter((item) => item.required)) {
-    const record = [...evidence].reverse().find((item) => item.kind === command.kind && item.command === command.command);
-    if (!record) {
-      requiredCommandResults.push({ kind: command.kind, status: "MISSING" });
-      reasons.push(`Required ${command.kind} evidence is missing.`);
-    } else if (record.exitCode !== 0) {
-      requiredCommandResults.push({ kind: command.kind, status: "FAIL", evidenceId: record.id });
-      reasons.push(`Required ${command.kind} command failed.`);
-    } else {
-      requiredCommandResults.push({ kind: command.kind, status: "PASS", evidenceId: record.id });
-    }
-  }
+  const latest = (command: string) => [...fresh].reverse().find((item) => item.command === command);
+  const requiredCommandResults: VerificationResult["requiredCommandResults"] = config.verification.commands
+    .filter((item) => item.required).map((command) => {
+      const record = latest(command.command);
+      const status = !record || record.kind !== command.kind ? "MISSING" : record.exitCode === 0 && !record.termination ? "PASS" : "FAIL";
+      if (status !== "PASS") reasons.push(`Required ${command.kind} command ${status.toLowerCase()}: ${command.command}`);
+      return { kind: command.kind, status, ...(record ? { evidenceId: record.id } : {}) };
+    });
 
   const requirements = intent.requirements.map((requirement) => {
-    const matching = evidence.filter((record) => requirement.evidenceKinds.includes(record.kind));
-    const passing = matching.filter((record) => record.exitCode === 0);
-    const failing = matching.filter((record) => record.exitCode !== 0);
-    if (failing.length) {
-      reasons.push(`${requirement.id} has failing evidence.`);
-      return { requirementId: requirement.id, status: "FAILED" as const, evidenceIds: failing.map((record) => record.id), reason: "One or more required evidence commands failed." };
-    }
-    const coveredKinds = new Set(passing.map((record) => record.kind));
-    const missingKinds = requirement.evidenceKinds.filter((kind) => !coveredKinds.has(kind));
-    if (missingKinds.length) {
-      reasons.push(`${requirement.id} lacks ${missingKinds.join(", ")} evidence.`);
-      return { requirementId: requirement.id, status: "UNVERIFIED" as const, evidenceIds: passing.map((record) => record.id), reason: `Missing evidence kinds: ${missingKinds.join(", ")}` };
-    }
-    return { requirementId: requirement.id, status: "VERIFIED" as const, evidenceIds: passing.map((record) => record.id) };
+    const bindings = requirement.evidenceCommands ?? [];
+    const records = bindings.map((command) => latest(command));
+    const evidenceIds = records.flatMap((item) => item ? [item.id] : []);
+    const registered = bindings.every((command) => config.verification.commands.some((item) => item.command === command));
+    const coveredKinds = new Set(records.flatMap((item) => item ? [item.kind] : []));
+    const failed = records.some((item) => item && (item.exitCode !== 0 || item.termination));
+    const missing = !bindings.length || !requirement.evidenceKinds.length || !registered || records.some((item) => !item)
+      || requirement.evidenceKinds.some((kind) => !coveredKinds.has(kind))
+      || records.some((item) => item && !config.verification.commands.some((command) => command.command === item.command && command.kind === item.kind));
+    const status = failed ? "FAILED" : missing ? "UNVERIFIED" : "VERIFIED";
+    if (status !== "VERIFIED") reasons.push(`${requirement.id}: ${failed ? "bound evidence failed" : "missing explicit, fresh command evidence"}.`);
+    return { requirementId: requirement.id, status: status as "VERIFIED" | "UNVERIFIED" | "FAILED", evidenceIds };
   });
-
-  const commandFailure = requiredCommandResults.some((result) => result.status !== "PASS");
-  const criticalFailure = requirements.some((result) => result.status !== "VERIFIED");
-  const status = commandFailure || criticalFailure ? "NOT_VERIFIED" : "VERIFIED";
-
   return {
-    version: 1,
-    status,
-    intentId: intent.id,
-    generatedAt: nowIso(),
-    requiredCommandResults,
-    requirements,
-    reasons,
+    version: 1, status: reasons.length ? "NOT_VERIFIED" : "VERIFIED", intentId: intent.id,
+    generatedAt: nowIso(), requiredCommandResults, requirements, reasons,
+    ...(state ? { repositoryState: state } : {}),
   };
 }

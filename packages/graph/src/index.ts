@@ -13,6 +13,7 @@ function resolveImport(sourcePath: string, specifier: string, files: Map<string,
   const base = normalizeRel(join(dirname(sourcePath), specifier));
   const candidates = [
     base,
+    ...[".ts", ".tsx", ".mts", ".cts"].map((extension) => base.replace(/\.(?:js|jsx|mjs|cjs)$/, extension)),
     ...[".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].map((extension) => `${base}${extension}`),
     ...["index.ts", "index.tsx", "index.js", "index.jsx"].map((index) => `${base}/${index}`),
   ];
@@ -29,7 +30,7 @@ async function packageNodes(root: string): Promise<GraphNode[]> {
 }
 
 export async function buildMindGraph(root: string, config: ProjectConfig): Promise<MindGraph> {
-  const parsed = await parseProject(root, config.scanner.extensions, config.scanner.exclude);
+  const parsed = await parseProject(root, config.scanner.extensions, config.scanner.exclude, config.scanner.include);
   const packages = await packageNodes(root);
   const nodes = [...parsed.files, ...parsed.symbols, ...packages];
   const edges: GraphEdge[] = [];
@@ -93,6 +94,7 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
         type: "TESTED_BY",
         from: target.id,
         to: test.id,
+        metadata: { confidence: "heuristic", source: "filename" },
       });
     }
   }
@@ -100,9 +102,9 @@ export async function buildMindGraph(root: string, config: ProjectConfig): Promi
   return {
     version: 1,
     generatedAt: nowIso(),
-    parser: "projectmind-regex-v0",
+    parser: "typescript-ast-5.9",
     nodes,
-    edges,
+    edges: [...new Map(edges.map((edge) => [edge.id, edge])).values()],
   };
 }
 

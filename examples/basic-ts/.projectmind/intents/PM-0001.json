@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "id": "PM-0001",
+  "title": "Login requires a user id",
+  "createdAt": "2026-10-02T09:00:00.000Z",
+  "requirements": [{ "id": "REQ-1", "statement": "Login accepts an id and rejects an empty user", "critical": true, "evidenceKinds": ["test"], "evidenceCommands": ["npm run test"] }],
+  "preserve": [],
+  "outOfScope": []
+}
