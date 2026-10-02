@@ -1,0 +1,22 @@
+{
+  "name": "projectmind",
+  "version": "0.1.0-dev",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "node --experimental-strip-types scripts/lint.ts",
+    "validate": "npm run lint && npm run typecheck && npm test && npm run build",
+    "projectmind": "node --experimental-strip-types apps/cli/src/index.ts"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}
