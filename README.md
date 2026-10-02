@@ -24,6 +24,7 @@ Implemented:
 - fresh, single-run evidence tied to Git HEAD and repository content
 - timeouts, bounded logs, fail-closed verification and JSON ProofPacks
 - official MCP SDK stdio server, with command execution disabled by default
+- reusable generic MCP compatibility pilot and tested Claude Code project configuration
 - GitHub Action with an explicit trust gate, check result, summary and artifact
 - development packaging and CI on Node 22 / 24
 
