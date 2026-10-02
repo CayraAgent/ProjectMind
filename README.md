@@ -37,6 +37,7 @@ pnpm install --frozen-lockfile
 pnpm validate
 pnpm pack:check
 node scripts/package-smoke.mjs ../projectmind-preview.tgz
+pnpm pack:repro
 ```
 
 ## Try it on your repository
