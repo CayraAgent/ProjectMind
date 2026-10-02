@@ -28,7 +28,7 @@ runs:
           printf '%s\n' 'ProjectMind requires trust-repository-code: true to execute repository-defined checks.' >&2
           exit 1
         fi
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v7
       with:
         node-version: 24
     - uses: pnpm/action-setup@v4
