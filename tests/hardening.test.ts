@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { initializeProject, loadConfig } from "../packages/core/src/project.ts";
+import { initializeProject, loadConfig, loadConstitution } from "../packages/core/src/project.ts";
 import { createIntent, bindRequirement, loadIntent } from "../packages/intent/src/index.ts";
 import { collectVerificationEvidence, collectCommandEvidence } from "../packages/evidence/src/index.ts";
 import { verifyIntent } from "../packages/verifier/src/index.ts";
@@ -109,6 +109,32 @@ test("init preserves configuration; invalid config and intent paths are rejected
   await assert.rejects(bindRequirement(root, "REQ-1", "unregistered"));
   await writeJson(join(root, ".projectmind/config.json"), { ...config, version: 2 });
   await assert.rejects(loadConfig(root));
+});
+
+test("Project Constitution blocks forbidden dependencies and under-evidenced sensitive changes", async (t) => {
+  const { root, config } = await fixture(t);
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
+  await writeFile(join(root, "src/policy.ts"), 'import "../tests/login.test.js"; import "@missing/internal"; export const policy = true;\n');
+  await writeJson(join(root, ".projectmind/constitution.json"), {
+    version: 1,
+    dependencyRules: [{ id: "ARCH-1", from: "src", cannotImport: "tests" }],
+    sensitivePaths: [],
+  });
+  const dependencyResult = await verifyProject(root);
+  assert.equal(dependencyResult.result.status, "NOT_VERIFIED");
+  assert.ok(dependencyResult.result.reasons.some((reason) => reason.includes("Policy ARCH-1")));
+  assert.ok(dependencyResult.result.reasons.some((reason) => reason.includes("unresolved import @missing/internal")));
+
+  await writeJson(join(root, ".projectmind/constitution.json"), {
+    version: 1,
+    dependencyRules: [],
+    sensitivePaths: [{ id: "SEC-1", prefix: "src", requiredEvidenceKinds: ["build"] }],
+  });
+  const sensitiveResult = await verifyProject(root);
+  assert.equal(sensitiveResult.result.status, "NOT_VERIFIED");
+  assert.ok(sensitiveResult.result.reasons.some((reason) => reason.includes("Policy SEC-1") && reason.includes("build")));
+  await writeJson(join(root, ".projectmind/constitution.json"), { version: 1, dependencyRules: [{ id: "bad", from: "../src", cannotImport: "tests" }], sensitivePaths: [] });
+  await assert.rejects(loadConstitution(root), /Path prefixes/);
 });
 
 test("AST scanner ignores comment/string traps and recognizes typed arrows, methods, and reexports", async (t) => {
