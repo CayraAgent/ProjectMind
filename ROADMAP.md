@@ -30,7 +30,8 @@ Before `v0.1.0` can be released:
 - [x] claim-to-evidence reporting with explicit strength levels
 - [x] Python parser/import/pytest support
 - [x] versioned provider/plugin SDK with example provider
-- [ ] Claude Code and generic MCP compatibility pilots
+- [x] generic MCP stdio compatibility pilot and reusable CI test
+- [ ] interactive Claude Code compatibility pilot; project config/root semantics are automated
 - [ ] at least two real repositories using the released tool
 
 Release gate: stable JS/TS and usable Python behavior, CI/CLI/MCP integration, meaningful provider regression tests and contributor documentation.

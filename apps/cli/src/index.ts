@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { resolve } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import { initializeProject, loadConfig } from "../../../packages/core/src/project.ts";
 import { buildMindGraph, persistMindGraph } from "../../../packages/graph/src/index.ts";
 import { createIntent, bindRequirement } from "../../../packages/intent/src/index.ts";
@@ -153,7 +153,11 @@ async function main(): Promise<void> {
   }
 
   if (command === "mcp") {
-    await runMcpServer(root, { allowExecution: process.env.PROJECTMIND_ALLOW_EXECUTION === "1" });
+    if (process.env.CLAUDE_PROJECT_DIR && !isAbsolute(process.env.CLAUDE_PROJECT_DIR)) {
+      throw new Error("CLAUDE_PROJECT_DIR must be an absolute path.");
+    }
+    const mcpRoot = process.env.CLAUDE_PROJECT_DIR ? resolve(process.env.CLAUDE_PROJECT_DIR) : root;
+    await runMcpServer(mcpRoot, { allowExecution: process.env.PROJECTMIND_ALLOW_EXECUTION === "1" });
     return;
   }
 

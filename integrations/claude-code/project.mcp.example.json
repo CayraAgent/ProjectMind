@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "projectmind": {
+      "type": "stdio",
+      "command": "projectmind",
+      "args": ["mcp"],
+      "env": {
+        "PROJECTMIND_ALLOW_EXECUTION": "0"
+      },
+      "timeout": 600000
+    }
+  }
+}

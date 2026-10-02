@@ -1,23 +1,48 @@
 # Claude Code integration
 
-The server is model-independent and uses the official MCP SDK stdio transport. Add the following entry to your client's MCP server configuration, replacing the absolute paths:
+ProjectMind is a local stdio MCP server built with the official TypeScript SDK. It reads `CLAUDE_PROJECT_DIR`, which Claude Code supplies to stdio servers, so project-scoped sessions resolve the repository root without a nonstandard `cwd` field.
+
+After installing a ProjectMind preview package so the `projectmind` binary is on `PATH`, copy [`project.mcp.example.json`](project.mcp.example.json) to `.mcp.json` in the target repository. Keep execution disabled while validating the connection:
 
 ```json
 {
   "mcpServers": {
     "projectmind": {
-      "command": "node",
-      "args": ["/absolute/path/ProjectMind/apps/cli/src/index.ts", "mcp"],
-      "cwd": "/absolute/path/your-trusted-repository"
+      "type": "stdio",
+      "command": "projectmind",
+      "args": ["mcp"],
+      "env": { "PROJECTMIND_ALLOW_EXECUTION": "0" },
+      "timeout": 600000
     }
   }
 }
 ```
 
-Client configuration formats differ; set the server working directory with the equivalent supported mechanism in your client. Initialize the target repository first. Startup does not require a model API key.
+For source development, use an absolute CLI path instead:
 
-Command execution is disabled by default. If you authorize the agent to request execution of trusted repository code, set `PROJECTMIND_ALLOW_EXECUTION=1` in the server process environment. This is an operator decision, not a tool argument.
+```json
+{
+  "mcpServers": {
+    "projectmind": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/ProjectMind/apps/cli/src/index.ts", "mcp"],
+      "env": { "PROJECTMIND_ALLOW_EXECUTION": "0" },
+      "timeout": 600000
+    }
+  }
+}
+```
 
-Available tools: `projectmind_get_project_context`, `projectmind_get_intent`, `projectmind_get_constraints`, `projectmind_get_changed_symbols`, `projectmind_get_evidence`, `projectmind_request_verification`, `projectmind_record_decision`, `projectmind_record_claim`.
+The equivalent Claude Code command is:
 
-A real SDK client handshake is tested in CI. An actual Claude Code user-session pilot remains a release gate; this document does not claim that one has already happened.
+```bash
+claude mcp add --transport stdio --scope project projectmind -- projectmind mcp
+claude mcp get projectmind
+```
+
+Claude Code requires interactive workspace/server approval for a newly cloned project-scoped `.mcp.json`. Review the command before approving it. Initialize the target repository with `projectmind init` first. Startup requires no model API key.
+
+Execution remains disabled unless the operator changes `PROJECTMIND_ALLOW_EXECUTION` to `1`. That permits `projectmind_request_verification` to run the reviewed commands in `.projectmind/config.json`; it does not let the model set a verdict.
+
+The automated compatibility pilot exercises Claude-style `CLAUDE_PROJECT_DIR` startup, protocol negotiation, server identity/capabilities, all nine tool schemas, safe context/intent calls, and the default execution block. The checked-in Claude config shape is also tested. An interactive Claude Code binary/session pilot remains pending because it requires an installed, authenticated Claude Code client and project approval; the repository does not claim that session has already happened.
