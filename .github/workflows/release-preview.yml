@@ -18,9 +18,9 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm validate
       - run: pnpm pack:repro
-      - run: node scripts/package-smoke.mjs ../projectmind-preview-a.tgz
+      - run: node scripts/package-smoke.mjs artifacts/projectmind-preview-a.tgz
       - uses: actions/upload-artifact@v4
         with:
           name: projectmind-release-preview
-          path: ../projectmind-preview-a.tgz
+          path: artifacts/projectmind-preview-a.tgz
           if-no-files-found: error
