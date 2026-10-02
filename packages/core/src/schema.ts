@@ -17,6 +17,21 @@ export const configSchema = z.object({
     }
   })).refine((items) => new Set(items.map((item) => item.command)).size === items.length, "Duplicate commands") }).strict(),
 }).strict();
+const pathPrefixSchema = nonempty.refine((value) => !value.startsWith("/") && !value.includes("\\")
+  && !value.split("/").includes("..") && !/[*?]/.test(value), "Path prefixes must be normalized repository-relative paths");
+export const constitutionSchema = z.object({
+  version: z.literal(1),
+  dependencyRules: z.array(z.object({
+    id: nonempty,
+    from: pathPrefixSchema,
+    cannotImport: pathPrefixSchema,
+  }).strict()).refine((items) => new Set(items.map((item) => item.id)).size === items.length, "Duplicate dependency rule ids"),
+  sensitivePaths: z.array(z.object({
+    id: nonempty,
+    prefix: pathPrefixSchema,
+    requiredEvidenceKinds: z.array(evidenceKindSchema).min(1),
+  }).strict()).refine((items) => new Set(items.map((item) => item.id)).size === items.length, "Duplicate sensitive path rule ids"),
+}).strict();
 export const requirementSchema = z.object({
   id: z.string().regex(/^REQ-\d+$/), statement: nonempty, critical: z.boolean(),
   evidenceKinds: z.array(evidenceKindSchema).min(1), evidenceCommands: z.array(nonempty).optional(),
