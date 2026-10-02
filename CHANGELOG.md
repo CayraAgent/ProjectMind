@@ -22,6 +22,7 @@
 - Add a reusable generic MCP stdio compatibility pilot, Claude-style `CLAUDE_PROJECT_DIR` root handling, server instructions, and a tested project-scoped Claude Code config example. An authenticated interactive Claude Code session remains an explicit pending pilot.
 - Add the first real-repository pilot: checked-in configuration, Constitution and exact-test intent let ProjectMind verify its own trust boundaries in CI and publish the resulting ProofPack artifact.
 - Add a fail-closed stable-release readiness check, publication checklist, complete npm metadata, package-name-independent smoke imports, and declaration-file-safe TypeScript scanning.
+- Add a deterministic, network-free demo runner and tested recording storyboard for the complete `NOT_VERIFIED → VERIFIED → NOT_VERIFIED` trust-gate flow.
 - Document trust limits and scope the roadmap to the v0.3 application candidate.
 
 No stable release or npm publication has occurred.
