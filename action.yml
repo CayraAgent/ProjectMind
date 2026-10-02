@@ -14,6 +14,9 @@ inputs:
   trust-repository-code:
     description: Must be true to authorize execution of the checked-out repository's code
     default: 'false'
+  proofpack-artifact-name:
+    description: Artifact name used for generated ProofPacks
+    default: projectmind-proofpack
 runs:
   using: composite
   steps:
@@ -58,7 +61,7 @@ runs:
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: projectmind-proofpack
+        name: ${{ inputs.proofpack-artifact-name }}
         path: ${{ inputs.working-directory }}/.projectmind/proofs/*.json
         if-no-files-found: warn
         include-hidden-files: true
