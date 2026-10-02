@@ -25,9 +25,22 @@ async function detectVerificationCommands(root: string, manager: string | undefi
   const pkg = JSON.parse(await readFile(packagePath, "utf8")) as { scripts?: Record<string, string> };
   const scripts = pkg.scripts ?? {};
   const kinds = ["test", "typecheck", "build", "lint"] as const;
-  return kinds.flatMap((kind) => scripts[kind]
-    ? [{ kind, command: commandFor(manager, kind), required: kind === "test" || kind === "typecheck" }]
-    : []);
+  const commands: VerificationCommand[] = [];
+  for (const kind of kinds) {
+    const script = scripts[kind];
+    if (!script) continue;
+    if (kind === "test" && /^node\s/.test(script) && /(?:^|\s)--test(?:\s|$)/.test(script) && !/[;&|`]/.test(script)) {
+      commands.push({
+        kind,
+        command: script.replace(/(?:^|\s)--test(?=\s|$)/, (match) => `${match} --test-reporter=junit`),
+        required: true,
+        provider: "node-test-junit",
+      });
+      continue;
+    }
+    commands.push({ kind, command: commandFor(manager, kind), required: kind === "test" || kind === "typecheck", provider: "generic-command" });
+  }
+  return commands;
 }
 
 async function detectProjectName(root: string): Promise<string> {

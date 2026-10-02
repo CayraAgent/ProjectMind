@@ -9,7 +9,7 @@ The deterministic core is model-independent. No LLM decides a verdict.
 | `graph` | Symbols, containment, imports, declared package dependencies, labelled test-name heuristics |
 | `git` | Working-tree/base-ref changes, reverse-import impact, repository content fingerprint |
 | `intent` | Requirement declarations and explicit command bindings |
-| `evidence` | Fresh command execution, bounded output, timeouts, one run id |
+| `evidence` | Fresh command execution, bounded output, timeouts, one run id, Node JUnit parsing |
 | `verifier` | Pure declared-check verdict; orchestration rescans and rejects repository drift |
 | `proofpack` | JSON artifacts with intent, changes, evidence, scope and verdict |
 | `mcp` | Official SDK stdio transport, validated tool arguments, operator-controlled execution |
@@ -24,7 +24,7 @@ The directory structure separates responsibilities; this preview builds one dist
 1. Capture Git commit and repository fingerprint.
 2. Load validated config and intent; scan current source and compute conservative impact.
 3. Run each configured command with one shared run id. Record state before/after each command.
-4. Require successful exact-command bindings for every requirement and all required checks.
+4. Require successful exact-command bindings for every requirement and all required checks. Test requirements also require one uniquely matching passed testcase for each bound name.
 5. Reject mixed runs, absent/stale evidence, timeouts, failed commands and repository drift.
 6. Write an unsigned JSON ProofPack and return exit 0 for VERIFIED, 2 for NOT_VERIFIED, 1 for setup/contract errors.
 

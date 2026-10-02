@@ -45,7 +45,7 @@ test("passing project checks cannot verify an unbound requirement", async (t) =>
 
 test("bound fresh evidence verifies; same-commit source edit invalidates it", async (t) => {
   const { root, config } = await fixture(t);
-  await bindRequirement(root, "REQ-1", "npm run test");
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const intent = await loadIntent(root);
   const evidence = await collectVerificationEvidence(root, config);
   const original = await repositoryState(root);
@@ -58,9 +58,9 @@ test("bound fresh evidence verifies; same-commit source edit invalidates it", as
 
 test("command mutating a source file cannot verify its own output", async (t) => {
   const { root, config } = await fixture(t);
-  config.verification.commands = [{ kind: "test", command: `node -e "require('fs').writeFileSync('src/auth.ts', 'export const login = () => false;')"`, required: true }];
+  config.verification.commands = [{ kind: "test", command: `node -e "require('fs').writeFileSync('src/auth.ts', 'export const login = () => false;')"`, required: true, provider: "node-test-junit" }];
   await writeJson(join(root, ".projectmind/config.json"), config);
-  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command);
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const { result } = await verifyProject(root);
   assert.equal(result.status, "NOT_VERIFIED");
   assert.ok(result.reasons.some((reason) => /changed/.test(reason)));
@@ -68,7 +68,7 @@ test("command mutating a source file cannot verify its own output", async (t) =>
 
 test("independent runs and an unconfigured command do not satisfy verification", async (t) => {
   const { root, config } = await fixture(t);
-  await bindRequirement(root, "REQ-1", "npm run test");
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const intent = await loadIntent(root);
   const a = await collectVerificationEvidence(root, config);
   const b = await collectVerificationEvidence(root, config);
@@ -80,7 +80,7 @@ test("independent runs and an unconfigured command do not satisfy verification",
 
 test("required failure, empty intent, and missing required commands fail closed", async (t) => {
   const { root, config } = await fixture(t);
-  await bindRequirement(root, "REQ-1", "npm run test");
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const intent = await loadIntent(root);
   const evidence = await collectVerificationEvidence(root, config);
   const state = await repositoryState(root);
@@ -148,16 +148,16 @@ test("Git filename parsing handles newlines; generated ProofPacks do not pollute
 test("CLI demo: missing requirement, added targeted test, VERIFIED, then failing behavior", async (t) => {
   const { root, config } = await fixture(t);
   await createIntent(root, "Login contract", ["Login succeeds", "Blank user is rejected"], [], []);
-  await bindRequirement(root, "REQ-1", "npm run test");
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   await assert.rejects(exec(process.execPath, [cli, "verify"], { cwd: root }), (error: unknown) => {
     const e = error as { code: number; stdout: string };
     return e.code === 2 && e.stdout.includes("NOT_VERIFIED") && e.stdout.includes("REQ-2");
   });
   await writeFile(join(root, "tests/blank.test.js"), 'import test from "node:test"; import assert from "node:assert/strict"; import { login } from "../src/auth.ts"; test("blank rejected", () => assert.equal(login("  "), false));\n');
-  const command = "node --experimental-strip-types --test tests/blank.test.js";
-  config.verification.commands.push({ kind: "test", command, required: true });
+  const command = "node --experimental-strip-types --test --test-reporter=junit tests/blank.test.js";
+  config.verification.commands.push({ kind: "test", command, required: true, provider: "node-test-junit" });
   await writeJson(join(root, ".projectmind/config.json"), config);
-  await exec(process.execPath, [cli, "intent", "bind", "REQ-2", "--command", command], { cwd: root });
+  await exec(process.execPath, [cli, "intent", "bind", "REQ-2", "--command", command, "--test", "blank rejected"], { cwd: root });
   const { stdout } = await exec(process.execPath, [cli, "verify"], { cwd: root });
   assert.match(stdout, /\nVERIFIED\n/);
   const proof = JSON.parse(await readFile(join(root, ".projectmind/latest-proof.json"), "utf8"));
@@ -201,7 +201,7 @@ test("base-ref comparison includes committed changes and rejects option-shaped r
 test("ignored intent edits still invalidate evidence", async (t) => {
   const { root, config } = await fixture(t);
   await writeFile(join(root, ".gitignore"), ".projectmind/\n");
-  await bindRequirement(root, "REQ-1", "npm run test");
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const evidence = await collectVerificationEvidence(root, config);
   const before = await repositoryState(root);
   const intent = await loadIntent(root);
@@ -213,8 +213,8 @@ test("ignored intent edits still invalidate evidence", async (t) => {
 });
 
 test("operator-enabled MCP requests run fresh checks and return a derived verdict", async (t) => {
-  const { root } = await fixture(t);
-  await bindRequirement(root, "REQ-1", "npm run test");
+  const { root, config } = await fixture(t);
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const client = new Client({ name: "projectmind-enabled-test", version: "1.0" });
   const transport = new StdioClientTransport({ command: process.execPath, args: [cli, "mcp"], cwd: root, env: { ...Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === "string")), PROJECTMIND_ALLOW_EXECUTION: "1" } });
   t.after(() => client.close());

@@ -55,7 +55,7 @@ test("verification derives VERIFIED from passing evidence", async () => {
   await persistMindGraph(root, graph);
   const intent = await createIntent(root, "Keep authentication working", ["Authentication remains functional"], [], []);
   const evidence = await collectVerificationEvidence(root, config);
-  await bindRequirement(root, "REQ-1", "npm run test");
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const bound = await loadIntent(root);
   const freshEvidence = await collectVerificationEvidence(root, config);
   const result = verifyIntent(config, bound, freshEvidence, await repositoryState(root));
@@ -83,7 +83,7 @@ test("change summary and ProofPack preserve intent/change/evidence lineage", asy
   await writeFile(join(root, "src", "auth.ts"), `export function login(user: string) { return user.trim().length > 0; }\n`);
   const change = await summarizeChanges(root, graph);
   const evidence = await collectVerificationEvidence(root, config);
-  await bindRequirement(root, "REQ-1", "npm run test");
+  await bindRequirement(root, "REQ-1", config.verification.commands[0]!.command, undefined, ["login"]);
   const bound = await loadIntent(root);
   const freshEvidence = await collectVerificationEvidence(root, config);
   const verification = verifyIntent(config, bound, freshEvidence, await repositoryState(root));

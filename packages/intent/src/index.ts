@@ -56,14 +56,28 @@ export async function loadIntent(root: string, id?: string): Promise<IntentContr
   return intentSchema.parse(await readJson(join(projectMindDir(root), "intents", `${resolved}.json`))) as IntentContract;
 }
 
-export async function bindRequirement(root: string, requirementId: string, command: string, id?: string): Promise<IntentContract> {
+export async function bindRequirement(
+  root: string,
+  requirementId: string,
+  command: string,
+  id?: string,
+  testNames: string[] = [],
+): Promise<IntentContract> {
   const config = await loadConfig(root);
   const registered = config.verification.commands.find((item) => item.command === command);
   if (!registered) throw new Error("Command must be declared in .projectmind/config.json before binding.");
   const intent = await loadIntent(root, id);
   const requirement = intent.requirements.find((item) => item.id === requirementId);
   if (!requirement) throw new Error("Unknown requirement id.");
+  if (registered.kind === "test" && registered.provider !== "node-test-junit") {
+    throw new Error("Test requirements require a structured test provider.");
+  }
+  if (registered.provider === "node-test-junit" && !testNames.length) {
+    throw new Error("Bind at least one exact test name with --test.");
+  }
   requirement.evidenceCommands = [...new Set([...(requirement.evidenceCommands ?? []), command])];
+  requirement.evidenceTests = [...new Set([...(requirement.evidenceTests ?? []), ...testNames])];
+  intentSchema.parse(intent);
   await writeJson(join(projectMindDir(root), "intents", `${intent.id}.json`), intent);
   return intent;
 }

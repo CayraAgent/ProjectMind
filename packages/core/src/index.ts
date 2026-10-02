@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { createHash } from "node:crypto";
 
 export type EvidenceKind = "test" | "build" | "typecheck" | "lint" | "static" | "runtime" | "command";
+export type EvidenceProviderKind = "generic-command" | "node-test-junit";
 export type VerificationStatus = "VERIFIED" | "PARTIALLY_VERIFIED" | "NOT_VERIFIED" | "BLOCKED";
 
 export interface VerificationCommand {
@@ -10,6 +11,7 @@ export interface VerificationCommand {
   command: string;
   required: boolean;
   timeoutMs?: number;
+  provider?: EvidenceProviderKind;
 }
 
 export interface ProjectConfig {
@@ -60,6 +62,25 @@ export interface Requirement {
   critical: boolean;
   evidenceKinds: EvidenceKind[];
   evidenceCommands?: string[];
+  evidenceTests?: string[];
+}
+
+export interface TestCaseEvidence {
+  id: string;
+  name: string;
+  classname?: string;
+  file?: string;
+  status: "passed" | "failed" | "skipped";
+  durationMs?: number;
+}
+
+export interface TestEvidenceSummary {
+  provider: "node-test-junit";
+  discovered: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  cases: TestCaseEvidence[];
 }
 
 export interface IntentContract {
@@ -88,6 +109,9 @@ export interface EvidenceRecord {
   repositoryState?: string;
   repositoryStateAfter?: string;
   termination?: "timeout" | "output-limit" | "spawn-error";
+  provider?: EvidenceProviderKind;
+  testSummary?: TestEvidenceSummary;
+  evidenceError?: string;
 }
 
 export interface RequirementVerification {

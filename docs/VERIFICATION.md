@@ -10,7 +10,8 @@ A general passing test suite does not automatically verify every requirement. Ea
   "statement": "Blank user is rejected",
   "critical": true,
   "evidenceKinds": ["test"],
-  "evidenceCommands": ["node --test tests/blank-user.test.js"]
+  "evidenceCommands": ["node --test --test-reporter=junit tests/blank-user.test.js"],
+  "evidenceTests": ["blank user is rejected"]
 }
 ```
 
@@ -19,19 +20,20 @@ Declare that command in `.projectmind/config.json` as well:
 ```json
 {
   "kind": "test",
-  "command": "node --test tests/blank-user.test.js",
+  "command": "node --test --test-reporter=junit tests/blank-user.test.js",
   "required": true,
+  "provider": "node-test-junit",
   "timeoutMs": 60000
 }
 ```
 
-The operator is responsible for reviewing test relevance and strength. v0.1 does not interpret arbitrary prose, verify assertion coverage, distinguish a vacuous passing command from a meaningful behavioral test, or establish that author-written tests are independent. Structured test-result providers and policy review are future work.
+The Node provider parses JUnit XML, rejects zero-test and all-skipped runs, and requires each bound exact testcase name to resolve to one passing case. Missing, duplicate, skipped, failed, or unrelated names do not verify the requirement. The operator still reviews test relevance and strength. v0.1 does not interpret arbitrary prose, verify assertion coverage, or establish that author-written tests are independent. Other runners remain generic checks until they receive a structured provider.
 
 ## Refusal cases
 
 - no intent requirements or no required commands
-- unbound requirement, undeclared command, or absent evidence kind
-- failed/timed-out/output-limited command
+- unbound requirement, undeclared command, absent evidence kind, or absent structured test name
+- failed/timed-out/output-limited command, malformed test report, zero tests, or all tests skipped
 - evidence from multiple runs or another repository state
 - repository mutation during execution
 - invalid JSON contract or unsafe intent id (setup error, exit 1)

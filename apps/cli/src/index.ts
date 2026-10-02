@@ -41,7 +41,7 @@ function optionValues(args: ParsedArgs, key: string): string[] {
 }
 
 function help(): string {
-  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  remember <decision|constraint|incident> <text>\n  mcp\n`;
+  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--test <exact-name>] [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  remember <decision|constraint|incident> <text>\n  mcp\n`;
 }
 
 async function main(): Promise<void> {
@@ -96,7 +96,13 @@ async function main(): Promise<void> {
     const requirementId = rest[0];
     const configuredCommand = optionValues(args, "command")[0];
     if (!requirementId || !configuredCommand) throw new Error("Usage: intent bind REQ-1 --command <configured-command>");
-    const intent = await bindRequirement(root, requirementId, configuredCommand, optionValues(args, "intent")[0]);
+    const intent = await bindRequirement(
+      root,
+      requirementId,
+      configuredCommand,
+      optionValues(args, "intent")[0],
+      optionValues(args, "test"),
+    );
     console.log(formatIntent(intent));
     return;
   }

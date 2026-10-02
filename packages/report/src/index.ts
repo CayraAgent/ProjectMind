@@ -24,7 +24,10 @@ export function formatIntent(intent: IntentContract): string {
     "",
     intent.title,
     "",
-    ...intent.requirements.map((requirement) => `${requirement.id}  ${requirement.statement}  [${requirement.evidenceKinds.join(", ")}]`),
+    ...intent.requirements.map((requirement) => {
+      const tests = requirement.evidenceTests?.length ? ` tests: ${requirement.evidenceTests.join(", ")}` : "";
+      return `${requirement.id}  ${requirement.statement}  [${requirement.evidenceKinds.join(", ")}]${tests}`;
+    }),
   ].join("\n");
 }
 
@@ -51,7 +54,13 @@ export function formatVerification(intent: IntentContract, evidence: EvidenceRec
     "",
     "Evidence",
   ];
-  for (const item of evidence) lines.push(`${mark(item.exitCode === 0)} ${item.kind.padEnd(10)} ${item.command ?? "recorded evidence"}`);
+  for (const item of evidence) {
+    const structuredPass = !item.testSummary || item.testSummary.discovered > 0 && item.testSummary.passed > 0 && item.testSummary.failed === 0;
+    const suffix = item.testSummary
+      ? ` (${item.testSummary.passed}/${item.testSummary.discovered} passed, ${item.testSummary.skipped} skipped)`
+      : item.evidenceError ? ` (${item.evidenceError})` : "";
+    lines.push(`${mark(item.exitCode === 0 && !item.evidenceError && structuredPass)} ${item.kind.padEnd(10)} ${item.command ?? "recorded evidence"}${suffix}`);
+  }
   lines.push("", "Requirements");
   for (const requirement of intent.requirements) {
     const verification = result.requirements.find((item) => item.requirementId === requirement.id);
