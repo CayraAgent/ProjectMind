@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { createHash } from "node:crypto";
 
-export const PROJECTMIND_VERSION = "0.1.0-dev.0";
+export const PROJECTMIND_VERSION = "0.1.0-dev.1";
 
 export type EvidenceKind = "test" | "build" | "typecheck" | "lint" | "static" | "runtime" | "command";
 export type EvidenceProviderKind = "generic-command" | "node-test-junit" | "pytest-junit";
