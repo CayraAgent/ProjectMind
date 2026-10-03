@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { assessReleaseReadiness } from "../scripts/release-readiness.mjs";
+import { PROJECTMIND_VERSION } from "../packages/core/src/index.ts";
+import packageManifest from "../package.json" with { type: "json" };
 
 const readyManifest = {
   name: "@example/projectmind",
@@ -13,17 +15,28 @@ const readyManifest = {
   license: "Apache-2.0",
   bin: { projectmind: "dist/apps/cli/src/index.js" },
   files: ["dist/apps", "dist/packages"],
-  publishConfig: { access: "public", provenance: true },
+  publishConfig: { access: "public", provenance: true, tag: "latest" },
 };
 
 test("release readiness accepts a confirmed, publishable stable manifest", () => {
   assert.deepEqual(assessReleaseReadiness(readyManifest, "@example/projectmind"), { ready: true, blockers: [] });
 });
 
+test("runtime and package versions cannot drift", () => {
+  assert.equal(PROJECTMIND_VERSION, packageManifest.version);
+});
+
 test("development manifest cannot accidentally pass the stable release gate", () => {
   const report = assessReleaseReadiness({ ...readyManifest, version: "0.1.0-dev", private: true }, undefined);
   assert.equal(report.ready, false);
   assert.deepEqual(report.blockers.map((blocker) => blocker.code), ["EXPECTED_NAME_REQUIRED", "VERSION_NOT_STABLE", "PACKAGE_PRIVATE"]);
+});
+
+test("preview readiness requires an explicit dev sequence and next tag", () => {
+  const preview = { ...readyManifest, name: "projectmind", version: "0.1.0-dev.0", publishConfig: { ...readyManifest.publishConfig, tag: "next" } };
+  assert.deepEqual(assessReleaseReadiness(preview, "projectmind", "preview"), { ready: true, blockers: [] });
+  const blocked = assessReleaseReadiness({ ...preview, version: "0.1.0-beta.1", publishConfig: { ...preview.publishConfig, tag: "latest" } }, "projectmind", "preview");
+  assert.deepEqual(blocked.blockers.map((item) => item.code), ["VERSION_NOT_PREVIEW", "PREVIEW_TAG_REQUIRED"]);
 });
 
 test("confirmed distribution name must match package metadata", () => {

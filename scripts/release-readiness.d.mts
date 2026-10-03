@@ -8,4 +8,4 @@ export interface ReleaseReadinessReport {
   blockers: ReleaseBlocker[];
 }
 
-export function assessReleaseReadiness(manifest: Record<string, any>, expectedName?: string): ReleaseReadinessReport;
+export function assessReleaseReadiness(manifest: Record<string, any>, expectedName?: string, channel?: "stable" | "preview"): ReleaseReadinessReport;
