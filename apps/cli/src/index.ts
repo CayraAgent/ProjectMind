@@ -9,6 +9,7 @@ import { formatChanges, formatInit, formatIntent, formatVerification } from "../
 import { runMcpServer } from "../../../packages/mcp/src/index.ts";
 import { recordMemory, searchMemory, type MemoryType } from "../../../packages/memory/src/index.ts";
 import { getClaimReport, recordClaim } from "../../../packages/claims/src/index.ts";
+import { PROJECTMIND_VERSION } from "../../../packages/core/src/index.ts";
 
 interface ParsedArgs {
   positionals: string[];
@@ -42,7 +43,7 @@ function optionValues(args: ParsedArgs, key: string): string[] {
 }
 
 function help(): string {
-  return `ProjectMind v0.1.0-dev\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--test <exact-name>] [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  claim record <text> [--evidence <id>] [--intent <id>] [--requirement <id>]\n  claim report\n  remember <decision|constraint|incident> <text>\n  recall <query> [--type <decision|constraint|incident>] [--limit <1-50>]\n  mcp\n`;
+  return `ProjectMind v${PROJECTMIND_VERSION}\n\nCommands:\n  init\n  scan\n  changes\n  intent create <title> [--require <text>] [--preserve <text>] [--out-of-scope <text>]\n  intent bind <requirement-id> --command <configured-command> [--test <exact-name>] [--intent <id>]\n  verify [intent-id] [--base <git-ref>]\n  claim record <text> [--evidence <id>] [--intent <id>] [--requirement <id>]\n  claim report\n  remember <decision|constraint|incident> <text>\n  recall <query> [--type <decision|constraint|incident>] [--limit <1-50>]\n  mcp\n`;
 }
 
 async function main(): Promise<void> {

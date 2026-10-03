@@ -12,7 +12,15 @@ Run the local gate with that exact name:
 pnpm release:check --name @scope/projectmind
 ```
 
-The command intentionally exits with status 2 while the package is private, uses a development version, lacks provenance/public publish settings, or differs from the confirmed name. `--json` emits a machine-readable blocker report.
+The first public artifact may be a reviewed development preview on the non-default `next` tag:
+
+```bash
+pnpm release:check --channel preview --name projectmind
+```
+
+Preview versions must use `x.y.z-dev.N`; they never satisfy the stable release gate and must not receive the `latest` tag.
+
+The stable command intentionally exits with status 2 for a development version or when public/provenance settings differ from policy. `--json` emits a machine-readable blocker report.
 
 ## Stable publication checklist
 

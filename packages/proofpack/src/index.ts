@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { nowIso, projectMindDir, stableId, writeJson, type ChangeSummary, type EvidenceRecord, type IntentContract, type ProofPack, type VerificationResult } from "../../core/src/index.ts";
+import { PROJECTMIND_VERSION, nowIso, projectMindDir, stableId, writeJson, type ChangeSummary, type EvidenceRecord, type IntentContract, type ProofPack, type VerificationResult } from "../../core/src/index.ts";
 import { proofPackSchema } from "../../core/src/schema.ts";
 
 export function validateProofPack(value: unknown): ProofPack {
@@ -17,7 +17,7 @@ export async function createProofPack(
   const createdAt = nowIso();
   const proof: ProofPack = {
     version: 1,
-    projectMindVersion: "0.1.0-dev",
+    projectMindVersion: PROJECTMIND_VERSION,
     scope: "declared-command-checks",
     id: stableId("proof", `${intent.id}:${change.commit ?? "working-tree"}:${createdAt}`),
     createdAt,
