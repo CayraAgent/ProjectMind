@@ -33,9 +33,9 @@ test("development manifest cannot accidentally pass the stable release gate", ()
 });
 
 test("preview readiness requires an explicit dev sequence and next tag", () => {
-  const preview = { ...readyManifest, name: "projectmind", version: "0.1.0-dev.0", publishConfig: { ...readyManifest.publishConfig, tag: "next" } };
-  assert.deepEqual(assessReleaseReadiness(preview, "projectmind", "preview"), { ready: true, blockers: [] });
-  const blocked = assessReleaseReadiness({ ...preview, version: "0.1.0-beta.1", publishConfig: { ...preview.publishConfig, tag: "latest" } }, "projectmind", "preview");
+  const preview = { ...readyManifest, name: "@callabens/projectmind", version: "0.1.0-dev.1", publishConfig: { ...readyManifest.publishConfig, tag: "next" } };
+  assert.deepEqual(assessReleaseReadiness(preview, "@callabens/projectmind", "preview"), { ready: true, blockers: [] });
+  const blocked = assessReleaseReadiness({ ...preview, version: "0.1.0-beta.1", publishConfig: { ...preview.publishConfig, tag: "latest" } }, "@callabens/projectmind", "preview");
   assert.deepEqual(blocked.blockers.map((item) => item.code), ["VERSION_NOT_PREVIEW", "PREVIEW_TAG_REQUIRED"]);
 });
 
