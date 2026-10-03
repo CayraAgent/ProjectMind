@@ -11,7 +11,7 @@ An open-source, local-first verification and project-intelligence layer for AI c
 
 ## Status: v0.1 development preview
 
-The initial bootstrap has been recovered and hardened. This is not a stable release or an npm-published package. JS/TS scanning uses the TypeScript compiler AST, Python scanning uses Python 3 `ast`, and deterministic policies and structured test providers remain independent of any model.
+The initial bootstrap has been recovered and hardened. This is a development preview, not a stable release. JS/TS scanning uses the TypeScript compiler AST, Python scanning uses Python 3 `ast`, and deterministic policies and structured test providers remain independent of any model.
 
 Implemented:
 
@@ -46,6 +46,13 @@ pnpm projectmind verify
 ```
 
 ## Try it on your repository
+
+Install the development preview from npm:
+
+```bash
+npm install --global @callabens/projectmind@next
+projectmind --help
+```
 
 Run the source CLI by absolute path from the root of a trusted Git repository with at least one commit. `init` detects package scripts but does not execute them.
 
