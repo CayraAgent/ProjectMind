@@ -28,4 +28,4 @@
 
 No stable release or npm publication has occurred.
 
-The manifest is prepared for the first reviewed `0.1.0-dev.0` preview on the non-default `next` npm tag. This does not mark a stable release.
+The manifest is prepared for the first reviewed `0.1.0-dev.1` preview as `@callabens/projectmind` on the non-default `next` npm tag. This does not mark a stable release.

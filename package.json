@@ -1,6 +1,6 @@
 {
-  "name": "projectmind",
-  "version": "0.1.0-dev.0",
+  "name": "@callabens/projectmind",
+  "version": "0.1.0-dev.1",
   "description": "Local-first evidence verification and project intelligence for coding agents.",
   "private": false,
   "type": "module",
@@ -74,6 +74,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/CayraAgent/ProjectMind.git"
+    "url": "git+https://github.com/CayraAgent/ProjectMind.git"
   }
 }
